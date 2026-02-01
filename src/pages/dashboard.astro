@@ -16,7 +16,7 @@ import AlertFeed from "../components/dashboard/AlertFeed.jsx";
         <!-- TOP ROW: Key Monitors -->
         <div class="top-row">
             <div class="server-panel">
-                <ServerConsumption client:load />
+                <AlertFeed client:load />
             </div>
             <div class="climate-panel">
                 <ClimateMonitor client:load />
@@ -32,9 +32,8 @@ import AlertFeed from "../components/dashboard/AlertFeed.jsx";
                 <RiskMapController client:only="react" />
             </div>
             <div class="alert-section">
-                 <!-- Replaced Astro component with React component -->
                 <div class="alert-wrapper">
-                    <AlertFeed client:load />
+                    <ServerConsumption client:load />
                 </div>
             </div>
         </div>
@@ -67,6 +66,15 @@ import AlertFeed from "../components/dashboard/AlertFeed.jsx";
         min-height: 280px;
     }
 
+    /* Used to be empty, now holds AlertFeed so needs glass style */
+    .server-panel {
+        background: var(--bg-panel);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 16px;
+        padding: 1.5rem;
+        overflow: hidden;
+    }
+
     /* Middle Row Grid */
     .middle-row {
         display: grid;
@@ -82,11 +90,10 @@ import AlertFeed from "../components/dashboard/AlertFeed.jsx";
         overflow: hidden;
     }
 
+    /* ServerConsumption has its own styles, so we strip this container */
     .alert-section {
-        background: var(--bg-panel);
-        border: 1px solid rgba(255, 255, 255, 0.05);
-        border-radius: 16px;
-        padding: 1.5rem;
+        /* No background/border/padding needed */
+        height: 100%;
     }
 
     .alert-wrapper {
