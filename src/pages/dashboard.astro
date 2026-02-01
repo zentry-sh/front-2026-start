@@ -1,7 +1,7 @@
 ---
 import DashboardLayout from "../layouts/DashboardLayout.astro";
-import RiskMap from "../components/dashboard/RiskMap.astro";
-import CoolingSystemStatus from "../components/dashboard/CoolingSystemStatus.astro";
+import RiskMapController from "../components/dashboard/RiskMapController.jsx";
+import CoolingWidget from "../components/dashboard/CoolingWidget.jsx";
 
 // New React Components
 import ServerConsumption from "../components/dashboard/ServerConsumption.jsx";
@@ -29,7 +29,7 @@ import AlertFeed from "../components/dashboard/AlertFeed.jsx";
         <!-- MIDDLE ROW: Map & Operations -->
         <div class="middle-row">
             <div class="map-section">
-                <RiskMap />
+                <RiskMapController client:only="react" />
             </div>
             <div class="alert-section">
                  <!-- Replaced Astro component with React component -->
@@ -45,7 +45,7 @@ import AlertFeed from "../components/dashboard/AlertFeed.jsx";
                 <EfficiencyRecommendations client:load />
             </div>
             <div class="cooling-section">
-                <CoolingSystemStatus />
+                <CoolingWidget client:visible />
             </div>
         </div>
     </div>
