@@ -246,77 +246,168 @@ export class MockApiService {
   }
 
   private updateState() {
-    // 1. Variar Métricas de Servidor (Simulado)
-    const cpuChange = (Math.random() - 0.5) * 5;
-    this.currentState.serverMetrics.cpu = Math.max(10, Math.min(90, this.currentState.serverMetrics.cpu + cpuChange));
+    // 1. SIMULATE TIME (Accelerated for demo: 1 real sec = 1 sim min could be cool, but let's stick to real time or just noise)
+    // Actually, for "realism" in a demo, we usually want it to look alive.
+    // Let's make Server CPU correlate with specific "Business Hours" if we wanted, 
+    // but random walk is fine as long as other metrics follow it.
 
-    // RAM sigue un poco al CPU con retardo
-    this.currentState.serverMetrics.ram = Math.max(20, Math.min(95, this.currentState.serverMetrics.ram + cpuChange * 0.5));
+    // --- SERVER PHYSICS ---
+    // Random walk for CPU
+    const cpuChange = (Math.random() - 0.5) * 8;
+    let newCpu = this.currentState.serverMetrics.cpu + cpuChange;
+    // Bound CPU
+    newCpu = Math.max(10, Math.min(98, newCpu));
+    this.currentState.serverMetrics.cpu = newCpu;
 
-    // Power depende de CPU
-    this.currentState.serverMetrics.power = 800 + (this.currentState.serverMetrics.cpu * 15) + (Math.random() * 50);
+    // RAM lags CPU (Smooth follow)
+    const targetRam = 30 + (newCpu * 0.6);
+    this.currentState.serverMetrics.ram += (targetRam - this.currentState.serverMetrics.ram) * 0.1;
 
-    // Temp depende de Power
-    this.currentState.serverMetrics.temp = 20 + (this.currentState.serverMetrics.power / 100) + (Math.random() - 0.5);
+    // Power is DIRECTLY related to CPU + a baseline
+    // P = P_idle + (P_max - P_idle) * (Utilization)
+    // Idle 500W, Max 1500W per rack (avg)
+    this.currentState.serverMetrics.power = 800 + (newCpu * 20) + (Math.random() * 20);
+
+    // Temp lags Power (Thermal mass)
+    // Target Temp = Ambient + (Power * EfficiencyFactor) - CoolingEffect
+    // Simplified: T_target = 18 + (Power/100)
+    const targetTemp = 18 + (this.currentState.serverMetrics.power / 150);
+    this.currentState.serverMetrics.temp += (targetTemp - this.currentState.serverMetrics.temp) * 0.05;
 
 
-    // 2. Clima (Simulado, small noise around the real value if we fetched it, or just noise)
-    // We keep the real fetched value mostly steady but add tiny noise for "live" feel
-    this.currentState.climate.temp += (Math.random() - 0.5) * 0.1;
+    // --- CLIMATE (Real + Noise) ---
+    this.currentState.climate.temp += (Math.random() - 0.5) * 0.05;
 
-    // 3. Tarifa (Simulado acumulado)
-    // Add small cost every tick
-    this.currentState.tariff.accumulatedCost += 0.005;
 
-    // Period logic usually time based, simplified here
-    const hour = new Date().getHours();
-    if (hour >= 18 && hour <= 22) this.currentState.tariff.period = 'peak';
-    else if (hour >= 23 || hour <= 6) this.currentState.tariff.period = 'off-peak';
-    else this.currentState.tariff.period = 'standard';
+    // --- TARIFF SCHEDULE (Industrial GDMTH-like) ---
+    // Base: 00:00 - 06:00
+    // Intermedia: 06:00 - 18:00 && 22:00 - 24:00
+    // Punta (Peak): 18:00 - 22:00
+    const now = new Date();
+    const hour = now.getHours();
+    let period: 'peak' | 'standard' | 'off-peak' = 'off-peak';
+    let price = 1.2; // Base price MXN
 
-    this.currentState.tariff.currentPrice =
-      this.currentState.tariff.period === 'peak' ? 0.35 :
-        this.currentState.tariff.period === 'standard' ? 0.15 : 0.08;
+    if (hour >= 18 && hour < 22) {
+      period = 'peak';
+      price = 2.85; // Expensive
+    } else if ((hour >= 6 && hour < 18) || (hour >= 22)) {
+      period = 'standard';
+      price = 1.65;
+    } else {
+      period = 'off-peak';
+      price = 0.95;
+    }
 
-    // 4. Cooling System Simulation
-    const loadChange = (Math.random() - 0.5) * 2;
-    this.currentState.coolingSystem.coolingLoad = Math.max(30, Math.min(98, this.currentState.coolingSystem.coolingLoad + loadChange));
+    this.currentState.tariff.period = period;
+    this.currentState.tariff.currentPrice = price;
 
-    // Fan speed follows load
-    const targetFan = 1500 + (this.currentState.coolingSystem.coolingLoad * 20);
-    this.currentState.coolingSystem.fanSpeed += (targetFan - this.currentState.coolingSystem.fanSpeed) * 0.1;
+    // Smooth accumulation based on Real Power
+    // Energy (kWh) = Power (kW) * Time (h). 
+    // We update every ~2s. 2s = 0.00055 hours. 
+    // Real Power ~2000kW (TOTAL system).
+    // Let's use the Real System Global Power for cost
 
-    // Temperatures fluctuate slightly
-    this.currentState.coolingSystem.inletTemp = 18 + (Math.random() * 0.5);
-    this.currentState.coolingSystem.returnTemp = 24 + (this.currentState.coolingSystem.coolingLoad * 0.05) + (Math.random() * 0.5);
+    // --- COOLING PHYSICS ---
+    // Cooling Load depends on: Server Load (Heat) + Outdoor Temp (DeltaT)
+    const outdoorImpact = Math.max(0, this.currentState.climate.temp - 15) * 1.5;
+    const serverHeatImpact = this.currentState.serverMetrics.power / 40; // Scaling factor
 
-    // 5. Update Real System Details (Simulated Physics)
+    let targetCoolingLoad = 20 + outdoorImpact + serverHeatImpact;
+    // Bound
+    targetCoolingLoad = Math.max(10, Math.min(100, targetCoolingLoad));
+
+    // Smooth transition
+    this.currentState.coolingSystem.coolingLoad += (targetCoolingLoad - this.currentState.coolingSystem.coolingLoad) * 0.1;
+
     const loadFactor = this.currentState.coolingSystem.coolingLoad / 100;
+
+    // --- REAL ASSET SIMULATION ---
+    const activeChillers = this.currentState.realSystem.chillers.filter(c => c.on);
+    const activeChillerCount = activeChillers.length || 1; // avoid /0
+
+    // Distribute load among active chillers
+    // If load is 80% and 3 chillers are on, each takes substantial load.
+    // If load is 80% and 1 chiller is on, it overloads (simulated by high temps)
+
+    // Capacity per chiller (arbitrary units, say 1 chiller handles 25% global load comfortably)
+    const loadPerChiller = this.currentState.coolingSystem.coolingLoad / (activeChillerCount * 25);
+
+    let totalCoolingPower = 0;
 
     this.currentState.realSystem.chillers.forEach(chi => {
       if (chi.on) {
-        // Simulate realistic fluctuations
-        chi.enteringTemp = 12 + (loadFactor * 2) + (Math.random() * 0.2);
-        chi.leavingTemp = chi.setPoint + (Math.random() * 0.1); // Close to setpoint
-        chi.flow = 110 + (loadFactor * 20) + (Math.random() * 2);
+        // Power consumption (kW) non-linear with load
+        // P = Base + (Load^2)
+        const chillerLoad = Math.min(1.2, loadPerChiller); // Cap at 120%
+        const powerDraw = 50 + (chillerLoad * 180) + (Math.random() * 5);
+        totalCoolingPower += powerDraw;
+
+        // Physics: Leaving Water Temp (LWT)
+        // If overloaded (load > 1), LWT rises above Setpoint
+        const overloadFactor = Math.max(0, chillerLoad - 1);
+        chi.leavingTemp = chi.setPoint + (overloadFactor * 5) + (Math.random() * 0.2);
+
+        // Physics: Entering Water Temp (EWT)
+        // EWT = LWT + DeltaT (where DeltaT proportional to Heat Load)
+        const deltaT = 4 + (chillerLoad * 3);
+        chi.enteringTemp = chi.leavingTemp + deltaT;
+
+        chi.flow = 80 + (chillerLoad * 50) + (Math.random() * 2);
       } else {
-        // Return to ambient if off
+        chi.flow = 0;
         chi.enteringTemp += (20 - chi.enteringTemp) * 0.05;
         chi.leavingTemp += (20 - chi.leavingTemp) * 0.05;
-        chi.flow = 0;
       }
     });
 
-    this.currentState.realSystem.condenserPumps.forEach(pump => {
-      if (pump.on) {
-        pump.rpm = 1400 + (loadFactor * 100) + (Math.random() * 10); // Var around 1400-1500
-      } else {
-        pump.rpm = 0;
-      }
+    // Pumps Power
+    this.currentState.realSystem.condenserPumps.forEach(p => {
+      if (p.on) totalCoolingPower += 22; // kW approx
     });
 
-    // Check synchronization (Simple logic: if Chiller 1 is on, ensure pump 1 is on for "correct" operation)
-    // For now independent to allow user control
+    // Total Facility Power = Servers + Cooling
+    const totalFacilityPower = (this.currentState.serverMetrics.power * 50) + totalCoolingPower; // 50x scaling for "Data Center Size" vs "Single Rack" metrics
+    // Cost Accumulation
+    const kWh = (totalFacilityPower / 1000) * (2 / 3600); // 2 sec duration
+    this.currentState.tariff.accumulatedCost += kWh * price;
+
+
+    // --- ALERTS LOGIC (CORRELATION ENGINE) ---
+
+    // 1. High Cost Efficiency Alert
+    // If in PEAK time AND Cooling Load is High (>80%)
+    if (period === 'peak' && this.currentState.coolingSystem.coolingLoad > 80) {
+      this.triggerAlert('al-cost', 'Ineficiencia de Costo', 'warning',
+        `Operando a alta carga (${Math.round(this.currentState.coolingSystem.coolingLoad)}%) durante horario Punta. Se sugiere activar descarga térmica.`);
+    }
+
+    // 2. Capacity Risk
+    // If Load per chiller > 100% (Implied by High LWT check or direct calc)
+    if (activeChillerCount > 0 && (this.currentState.coolingSystem.coolingLoad / (activeChillerCount * 25)) > 1.1) {
+      this.triggerAlert('al-cap', 'Sobrecarga de Chillers', 'critical',
+        `Capacidad excedida. Chillers activos (${activeChillerCount}) insuficientes para la demanda actual.`);
+    } else {
+      // Auto-resolve if condition clears? 
+      // For simplicity in this mock, we assume user dismisses or we implement auto-clear logic separate.
+      // Let's implement auto-clear only for "Live" states if we wanted, but let's stick to adding.
+    }
+  }
+
+  private triggerAlert(uid: string, title: string, level: 'critical' | 'warning' | 'info', desc: string) {
+    // Prevent flood: Check if alert with same UID exists or same title recently
+    const exists = this.currentState.alerts.some(a => a.title === title);
+    if (!exists) {
+      this.currentState.alerts.unshift({
+        id: Date.now(),
+        title,
+        time: 'Ahora',
+        level,
+        desc
+      });
+      // Keep list size manageable
+      if (this.currentState.alerts.length > 20) this.currentState.alerts.pop();
+    }
   }
 
   // --- Real System Control Methods ---
