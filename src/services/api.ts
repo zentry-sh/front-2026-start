@@ -57,6 +57,28 @@ export interface RealSystemData {
   totalPower: number;
 }
 
+export interface RiskMetrics {
+  water: {
+    reservoirLevel: number; // %
+    daysOfAutonomy: number;
+    flowRate: number; // L/s
+  };
+  grid: {
+    frequency: number; // Hz
+    voltage: number; // V
+    stability: 'stable' | 'unstable' | 'trip';
+  };
+  seismic: {
+    lastEvent: { mag: number; time: string; depth: number };
+    localVibration: number; // g-force
+    alertLevel: 'none' | 'warning' | 'critical';
+  };
+  fuel: {
+    dieselLevel: number; // %
+    runtimeHours: number;
+  };
+}
+
 export interface DashboardData {
   serverMetrics: ServerMetrics;
   climate: ClimateData;
@@ -67,6 +89,7 @@ export interface DashboardData {
   realSystem: RealSystemData;
   locationName: string;
   forecast: { day: string; temp: number; icon: string }[];
+  riskMetrics: RiskMetrics;
 }
 
 export class MockApiService {
@@ -116,7 +139,13 @@ export class MockApiService {
       totalPower: 0
     },
     locationName: 'CDMX - Centro',
-    forecast: []
+    forecast: [],
+    riskMetrics: {
+      water: { reservoirLevel: 72, daysOfAutonomy: 4.5, flowRate: 45 },
+      grid: { frequency: 60.02, voltage: 127.4, stability: 'stable' },
+      seismic: { lastEvent: { mag: 4.2, time: '2025-05-12', depth: 32 }, localVibration: 0.002, alertLevel: 'none' },
+      fuel: { dieselLevel: 88, runtimeHours: 32 }
+    }
   };
 
   // Location State
@@ -397,6 +426,25 @@ export class MockApiService {
     // Cost Accumulation
     const kWh = (totalFacilityPower / 1000) * (2 / 3600); // 2 sec duration
     this.currentState.tariff.accumulatedCost += kWh * price;
+
+
+    // --- RISK TELEMETRY SIMULATION ---
+
+    // 1. Grid Physics (Noise around 60Hz)
+    const freqNoise = (Math.random() - 0.5) * 0.05;
+    this.currentState.riskMetrics.grid.frequency = 60 + freqNoise + (Math.random() > 0.95 ? (Math.random() - 0.5) * 0.3 : 0); // Occasional spike
+    this.currentState.riskMetrics.grid.voltage = 127 + (Math.random() - 0.5) * 2;
+
+    // 2. Water Draw
+    // Water consumption correlates with Cooling Load
+    const waterDraw = (loadFactor * 0.5) + 0.1; // % per tick (scaled down for realism? No, simplified)
+    // Actually make it micro-draw
+    this.currentState.riskMetrics.water.reservoirLevel -= (waterDraw * 0.001);
+    if (this.currentState.riskMetrics.water.reservoirLevel < 0) this.currentState.riskMetrics.water.reservoirLevel = 0;
+
+    // 3. Seismic (Random micro-tremors)
+    this.currentState.riskMetrics.seismic.localVibration = Math.random() * 0.005;
+
 
 
     // --- ALERTS LOGIC (CORRELATION ENGINE) ---
