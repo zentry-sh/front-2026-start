@@ -4,8 +4,8 @@ import "./RiskMap.css";
 
 const LOCATIONS = [
     { id: "cdmx", name: "CDMX - Centro", lat: 19.4326, lon: -99.1332, label: "CDMX" },
-    { id: "la", name: "Los Angeles", lat: 34.0522, lon: -118.2437, label: "L.A." },
-    { id: "bern", name: "Suiza (Bern)", lat: 46.9480, lon: 7.4474, label: "Bern" },
+    { id: "mty", name: "Monterrey, NL", lat: 25.6866, lon: -100.3161, label: "MTY" },
+    { id: "oax", name: "Oaxaca, Oax", lat: 17.0732, lon: -96.7266, label: "OAX" },
 ];
 
 export default function RiskMapController() {
