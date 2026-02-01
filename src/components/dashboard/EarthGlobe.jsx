@@ -118,24 +118,39 @@ export default function EarthGlobe({ markers = [], focusOn }) {
     globeGroup.add(markerGroup);
     markerGroupRef.current = markerGroup;
 
+    // State for animation
+    const clock = new THREE.Clock();
+
     // Animate
     const animate = () => {
+      const delta = clock.getDelta();
+      const elapsed = clock.getElapsedTime();
       const target = targetRotationRef.current;
 
       if (globeGroupRef.current) {
         // Shortest path interpolation
-        // Lerp each axis independently?
-        // For Y (Longitude):
         let dy = target.y - globeGroupRef.current.rotation.y;
-        // Normalize dy to -PI to +PI
         while (dy > Math.PI) dy -= 2 * Math.PI;
         while (dy < -Math.PI) dy += 2 * Math.PI;
-
         globeGroupRef.current.rotation.y += dy * 0.05;
 
-        // For X (Latitude):
         let dx = target.x - globeGroupRef.current.rotation.x;
         globeGroupRef.current.rotation.x += dx * 0.05;
+      }
+
+      // Animate Markers (Pulse effect)
+      if (markerGroupRef.current) {
+        markerGroupRef.current.children.forEach(marker => {
+          if (marker.userData.highlight) {
+            // Pulsing ring
+            const ring = marker.getObjectByName('pulseRing');
+            if (ring) {
+              const scale = 1 + Math.sin(elapsed * 3) * 0.3;
+              ring.scale.set(scale, scale, scale);
+              ring.material.opacity = 0.5 - Math.sin(elapsed * 3) * 0.2;
+            }
+          }
+        });
       }
 
       controls.update();
@@ -172,30 +187,69 @@ export default function EarthGlobe({ markers = [], focusOn }) {
     // Clear old markers
     while (group.children.length > 0) {
       const child = group.children[0];
-      if (child.geometry) child.geometry.dispose();
-      if (child.material) child.material.dispose();
+      // Dispose logic...
       group.remove(child);
     }
 
     // Add new markers
     markers.forEach((m) => {
-      const color = m.highlight ? 0xef4444 : 0xffffff;
-      const markerMaterial = new THREE.MeshBasicMaterial({ color });
-      const markerGeometry = new THREE.SphereGeometry(m.highlight ? 0.03 : 0.02, 16, 16);
+      const markerObj = new THREE.Group();
+      markerObj.userData = { highlight: m.highlight };
 
-      // Helper needed here... duplicate logic or move helper to ref?
-      // Re-implement helper for simplicity or move to outer scope
+      // 1. The Pin (Cylinder + Sphere)
+      const color = m.highlight ? 0xef4444 : 0x3b82f6; // Red for active, Blue for others
+
+      // Pin Shaft
+      const shaftGeom = new THREE.CylinderGeometry(0.005, 0.002, 0.1, 8);
+      shaftGeom.translate(0, 0.05, 0); // Pivot at bottom
+      const shaftMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+      const shaft = new THREE.Mesh(shaftGeom, shaftMat);
+
+      // Pin Head
+      const headGeom = new THREE.SphereGeometry(0.025, 16, 16);
+      headGeom.translate(0, 0.1, 0);
+      const headMat = new THREE.MeshBasicMaterial({ color: color });
+      const head = new THREE.Mesh(headGeom, headMat);
+
+      markerObj.add(shaft);
+      markerObj.add(head);
+
+      // 2. Pulsing Ring (Only for highlight)
+      if (m.highlight) {
+        const ringGeom = new THREE.RingGeometry(0.03, 0.04, 32);
+        // Rotate to lie flat vs the normal
+        ringGeom.rotateX(-Math.PI / 2);
+        const ringMat = new THREE.MeshBasicMaterial({
+          color: color,
+          transparent: true,
+          opacity: 0.5,
+          side: THREE.DoubleSide
+        });
+        const ring = new THREE.Mesh(ringGeom, ringMat);
+        ring.name = 'pulseRing';
+        markerObj.add(ring);
+      }
+
+      // Position on Globe
       const phi = (90 - m.lat) * (Math.PI / 180);
       const theta = (m.lon + 180) * (Math.PI / 180);
       const x = -(1 * Math.sin(phi) * Math.cos(theta));
       const z = 1 * Math.sin(phi) * Math.sin(theta);
       const y = 1 * Math.cos(phi);
-      const pos = new THREE.Vector3(x, y, z);
 
-      const mesh = new THREE.Mesh(markerGeometry, markerMaterial);
-      mesh.position.copy(pos);
-      mesh.position.multiplyScalar(1.005);
-      group.add(mesh);
+      markerObj.position.set(x, y, z);
+      markerObj.lookAt(new THREE.Vector3(0, 0, 0)); // Point inward
+      // Rotate 180 deg to point outward because Cylinder points up y
+      // Actually lookAt points Z axis. 
+      // Let's rely on quaternion calculation to be safe or manual rotation
+      // Standard LookAt makes +Z face the target.
+      // We want the vector (x,y,z) which is "Out" to be the UP of our marker, 
+      // OR aligns with the Y axis of the marker group.
+
+      const normal = new THREE.Vector3(x, y, z).normalize();
+      markerObj.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), normal);
+
+      group.add(markerObj);
     });
 
   }, [markers]);
