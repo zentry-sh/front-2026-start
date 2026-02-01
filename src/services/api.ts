@@ -39,12 +39,22 @@ export interface TariffData {
   accumulatedCost: number;
 }
 
+export interface CoolingSystemState {
+  chillerStatus: 'active' | 'standby' | 'fault';
+  coolingLoad: number; // Percentage
+  inletTemp: number;
+  returnTemp: number;
+  fanSpeed: number; // RPM
+  valvePosition: number; // % Open
+}
+
 export interface DashboardData {
   serverMetrics: ServerMetrics;
   climate: ClimateData;
   alerts: Alert[];
   recommendations: Recommendation[];
   tariff: TariffData;
+  coolingSystem: CoolingSystemState;
 }
 
 export class MockApiService {
@@ -58,7 +68,15 @@ export class MockApiService {
     climate: { temp: 22, humidity: 45, rainProb: 10, trend: 'stable' },
     alerts: [],
     recommendations: [],
-    tariff: { currentPrice: 0.15, period: 'standard', accumulatedCost: 124.50 }
+    tariff: { currentPrice: 0.15, period: 'standard', accumulatedCost: 124.50 },
+    coolingSystem: {
+      chillerStatus: 'active',
+      coolingLoad: 65,
+      inletTemp: 18.5,
+      returnTemp: 26.2,
+      fanSpeed: 2400,
+      valvePosition: 45
+    }
   };
 
   constructor() {
@@ -189,6 +207,18 @@ export class MockApiService {
     this.currentState.tariff.currentPrice =
       this.currentState.tariff.period === 'peak' ? 0.35 :
         this.currentState.tariff.period === 'standard' ? 0.15 : 0.08;
+
+    // 4. Cooling System Simulation
+    const loadChange = (Math.random() - 0.5) * 2;
+    this.currentState.coolingSystem.coolingLoad = Math.max(30, Math.min(98, this.currentState.coolingSystem.coolingLoad + loadChange));
+
+    // Fan speed follows load
+    const targetFan = 1500 + (this.currentState.coolingSystem.coolingLoad * 20);
+    this.currentState.coolingSystem.fanSpeed += (targetFan - this.currentState.coolingSystem.fanSpeed) * 0.1;
+
+    // Temperatures fluctuate slightly
+    this.currentState.coolingSystem.inletTemp = 18 + (Math.random() * 0.5);
+    this.currentState.coolingSystem.returnTemp = 24 + (this.currentState.coolingSystem.coolingLoad * 0.05) + (Math.random() * 0.5);
   }
 }
 

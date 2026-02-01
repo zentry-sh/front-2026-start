@@ -1,38 +1,19 @@
 ---
 import DashboardLayout from '../layouts/DashboardLayout.astro';
+import ReportCenter from '../components/reports/ReportCenter.jsx';
 ---
 
 <DashboardLayout>
   <span slot="title">Reportes Operativos</span>
   
-  <div class="placeholder-content">
-    <div class="glass-panel">
-        <h2>Centro de Reportes</h2>
-        <p>Descarga de métricas históricas, auditorías de eficiencia y logs de alertas.</p>
-        <div class="construction-Icon">📊</div>
-    </div>
+  <div class="page-container">
+    <ReportCenter client:load />
   </div>
 </DashboardLayout>
 
 <style>
-    .placeholder-content {
-        padding: 2rem;
+    .page-container {
+        padding: 0;
         height: 100%;
     }
-    .glass-panel {
-        background: var(--glass-surface);
-        backdrop-filter: blur(var(--blur-amount));
-        border: 1px solid var(--glass-border);
-        border-radius: 20px;
-        padding: 3rem;
-        text-align: center;
-        height: 100%;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-    }
-    h2 { margin-bottom: 0.5rem; color: var(--text-main); }
-    p { color: var(--text-muted); }
-    .construction-Icon { font-size: 4rem; margin-top: 2rem; }
 </style>
