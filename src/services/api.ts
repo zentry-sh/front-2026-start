@@ -76,6 +76,7 @@ export interface DashboardData {
   locationName: string;
   forecast: { day: string; temp: number; icon: string }[];
   riskMetrics: RiskMetrics;
+  registeredLocations: { id: string; name: string; lat: number; lon: number; risk: 'low' | 'medium' | 'high' }[];
 }
 
 export class MockApiService {
@@ -128,18 +129,29 @@ export class MockApiService {
     forecast: [],
     riskMetrics: {
       water: { reservoirLevel: 72, daysOfAutonomy: 4.5, flowRate: 45 }
-    }
+    },
+    registeredLocations: []
   };
 
   // Location State
   private currentLocation = {
+    id: 'cdmx',
     name: 'CDMX - Centro',
     lat: 19.4326,
     lon: -99.1332
   };
 
+  private locations = [
+    { id: 'cdmx', name: 'CDMX - Centro', lat: 19.4326, lon: -99.1332, risk: 'medium' as const },
+    { id: 'mty', name: 'Monterrey - Norte', lat: 25.6714, lon: -100.3097, risk: 'high' as const }, // Water stress
+    { id: 'qro', name: 'Querétaro - Bajío', lat: 20.5888, lon: -100.3899, risk: 'low' as const },
+    { id: 'bog', name: 'Bogotá - DC1', lat: 4.7110, lon: -74.0721, risk: 'low' as const },
+    { id: 'sp', name: 'São Paulo - South', lat: -23.5505, lon: -46.6333, risk: 'medium' as const }
+  ];
+
   constructor() {
     this.weatherService = WeatherService.getInstance();
+    this.currentState.registeredLocations = this.locations;
     this.loadState();
   }
 
@@ -166,10 +178,25 @@ export class MockApiService {
     }
   }
 
-  public async setLocation(name: string, lat: number, lon: number) {
-    this.currentLocation = { name, lat, lon };
+  public async setLocation(id: string) {
+    const loc = this.locations.find(l => l.id === id);
+    if (!loc) return;
+
+    this.currentLocation = { ...loc };
+    this.currentState.locationName = loc.name;
+
     // Trigger update immediately
     await this.updateFromRealWeather();
+
+    // Simulate specific risk profiles per location
+    if (id === 'mty') {
+      this.currentState.riskMetrics.water.reservoirLevel = 35; // Critical in MTY
+      this.currentState.riskMetrics.water.daysOfAutonomy = 1.2;
+    } else {
+      this.currentState.riskMetrics.water.reservoirLevel = 75 + Math.random() * 10;
+      this.currentState.riskMetrics.water.daysOfAutonomy = 5 + Math.random();
+    }
+
     this.notifySubscribers();
   }
 
