@@ -1,15 +1,39 @@
 
 import React, { useEffect, useState } from 'react';
 import { mockApi } from '../../services/api';
+import { WeatherService } from '../../services/WeatherService';
 
 export default function ClimateMonitor() {
   const [data, setData] = useState(null);
+  const [forecastDays, setForecastDays] = useState([]);
 
   useEffect(() => {
     mockApi.startSimulation();
     const unsubscribe = mockApi.subscribe((newData) => {
       setData(newData.climate);
     });
+
+    // Load real forecast for valid mini-forecast days
+    const loadForecast = async () => {
+      const service = WeatherService.getInstance();
+      const forecast = await service.fetchForecast();
+      if (forecast) {
+        const daily = service.projectDaily(forecast.list);
+        // Get next 3 days
+        const days = Object.keys(daily).sort().slice(0, 3).map(date => {
+          const temps = daily[date];
+          const avg = temps.reduce((a, b) => a + b, 0) / temps.length;
+          return {
+            day: new Date(date).toLocaleDateString('es-ES', { weekday: 'short' }).toUpperCase(),
+            temp: Math.round(avg),
+            icon: avg > 25 ? '☀️' : avg > 18 ? '⛅' : '🌧️'
+          };
+        });
+        setForecastDays(days);
+      }
+    };
+    loadForecast();
+
     return () => unsubscribe();
   }, []);
 
@@ -60,21 +84,26 @@ export default function ClimateMonitor() {
       </div>
 
       <div className="forecast-mini">
-        <div className="day">
-          <span>HOY</span>
-          <div className="day-icon sun">☀️</div>
-          <span>28°</span>
-        </div>
-        <div className="day">
-          <span>MAÑ</span>
-          <div className="day-icon cloud">⛅</div>
-          <span>26°</span>
-        </div>
-        <div className="day">
-          <span>MIÉ</span>
-          <div className="day-icon rain">🌧️</div>
-          <span>22°</span>
-        </div>
+        {forecastDays.length > 0 ? forecastDays.map((day, idx) => (
+          <div key={idx} className="day">
+            <span>{day.day.replace('.', '')}</span>
+            <div className="day-icon">{day.icon}</div>
+            <span>{day.temp}°</span>
+          </div>
+        )) : (
+          <>
+            <div className="day">
+              <span>HOY</span>
+              <div className="day-icon sun">☀️</div>
+              <span>--</span>
+            </div>
+            <div className="day">
+              <span>MAÑ</span>
+              <div className="day-icon cloud">⛅</div>
+              <span>--</span>
+            </div>
+          </>
+        )}
       </div>
 
       <style>{`
