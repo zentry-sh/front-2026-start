@@ -3,9 +3,9 @@ import EarthGlobe from "./EarthGlobe.jsx";
 import "./RiskMap.css";
 
 const LOCATIONS = [
-    { id: "cdmx", name: "CDMX - Centro", lat: 19.4326, lon: -99.1332, label: "CDMX" },
-    { id: "mty", name: "Monterrey, NL", lat: 25.6866, lon: -100.3161, label: "MTY" },
-    { id: "oax", name: "Oaxaca, Oax", lat: 17.0732, lon: -96.7266, label: "OAX" },
+    { id: "cdmx", name: "CDMX - Centro", lat: 19.4326, lon: -99.1332, label: "CDMX", risk: "high", riskLabel: "Alto Riesgo" },
+    { id: "mty", name: "Monterrey, NL", lat: 25.6866, lon: -100.3161, label: "MTY", risk: "critical", riskLabel: "Crítico" },
+    { id: "oax", name: "Oaxaca, Oax", lat: 17.0732, lon: -96.7266, label: "OAX", risk: "med", riskLabel: "Medio" },
 ];
 
 export default function RiskMapController() {
@@ -26,7 +26,9 @@ export default function RiskMapController() {
                 <h3>Estrés Hídrico Regional</h3>
 
                 <div className="risk-controls">
-                    <span className="risk-badge high">Alto Riesgo</span>
+                    <span className={`risk-badge ${selectedLocation.risk}`}>
+                        {selectedLocation.riskLabel}
+                    </span>
 
                     <select
                         className="region-select"
