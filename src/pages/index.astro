@@ -7,8 +7,8 @@ import Layout from "../layouts/Layout.astro";
     <div class="login-card">
       <div class="logo-area">
         <!-- Logo Icon -->
-        <div class="logo-icon"></div>
-        <h1>ANDY - Operative</h1>
+        <img src="/images/andy_logo.png" alt="ANDY" class="logo-img-large" />
+        <!-- <h1>ANDY - Operative</h1> -->
         <p class="subtitle">Data Center Water Management</p>
       </div>
 
@@ -124,14 +124,14 @@ import Layout from "../layouts/Layout.astro";
     align-items: center;
   }
 
-  .logo-icon {
-    width: 48px;
-    height: 48px;
-    background: linear-gradient(135deg, #0ea5e9, #2563eb);
-    border-radius: 12px;
-    box-shadow: 0 0 20px rgba(14, 165, 233, 0.5);
+  .logo-img-large {
+    width: 150px;
+    height: auto;
     margin-bottom: 1rem;
+    filter: drop-shadow(0 0 20px rgba(52, 211, 153, 0.4));
   }
+
+  /* .logo-icon removed */
 
   h1 {
     font-size: 2rem;

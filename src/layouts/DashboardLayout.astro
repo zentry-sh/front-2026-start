@@ -19,8 +19,8 @@
         <div class="app-container">
             <aside class="sidebar">
                 <div class="logo-area">
-                    <div class="logo-icon"></div>
-                    <span class="logo-text">ANDY - Operative</span>
+                    <img src="/images/andy_logo.png" alt="ANDY Logo" class="logo-img" />
+                    <!-- <span class="logo-text">ANDY - Operative</span> --> 
                 </div>
                 <nav>
                     <a href="/dashboard" class={`nav-item ${Astro.url.pathname === '/dashboard' ? 'active' : ''}`}>
@@ -250,23 +250,14 @@
         margin-bottom: 3.5rem;
     }
 
-    .logo-icon {
-        width: 36px;
-        height: 36px;
-        background: linear-gradient(135deg, var(--acc-primary), var(--acc-secondary));
-        border-radius: 10px;
-        box-shadow: 0 0 20px rgba(56, 189, 248, 0.4);
-        position: relative;
+    .logo-img {
+        height: 60px; /* Adjusted for sidebar */
+        width: auto;
+        filter: drop-shadow(0 0 10px rgba(52, 211, 153, 0.3)); /* Greenish glow matching logo */
     }
-    
-    .logo-icon::after {
-        content: '';
-        position: absolute;
-        inset: 0;
-        border-radius: 10px;
-        background: linear-gradient(to bottom, rgba(255,255,255,0.4), transparent);
-        opacity: 0.5;
-    }
+
+    /* .logo-icon { ... removed ... } */
+    /* .logo-text { ... removed ... } */
 
     .logo-text {
         font-size: 1.25rem;
