@@ -3,260 +3,250 @@ import { mockApi } from '../../services/api';
 
 export default function CoolingControl() {
     const [data, setData] = useState(null);
-
-    // Local state for controls to show interaction immediately
-    const [targetTemp, setTargetTemp] = useState(18);
+    const [realSystem, setRealSystem] = useState(null);
 
     useEffect(() => {
         mockApi.startSimulation();
         const unsubscribe = mockApi.subscribe((newData) => {
             setData(newData.coolingSystem);
+            setRealSystem(newData.realSystem);
         });
         return () => unsubscribe();
     }, []);
 
-    if (!data) return <div className="loading">Cargando sistema...</div>;
+    if (!data || !realSystem) return <div className="loading">Cargando sistema...</div>;
 
     return (
         <div className="cooling-dashboard">
-            {/* Main Status Panel */}
-            <div className="status-panel glass-panel">
-                <div className="panel-header">
-                    <h3>Estado del Sistema</h3>
-                    <span className={`status-badge ${data.chillerStatus}`}>
-                        {data.chillerStatus === 'active' ? 'ACTIVO' : 'STANDBY'}
-                    </span>
+            {/* Top: Global Status & Delta T (Keep existing visual) */}
+            <div className="global-status glass-panel">
+                <div className="status-header">
+                    <h3>Global Stats</h3>
+                    <div className="kpi-row">
+                        <div className="kpi">
+                            <label>Load</label>
+                            <span>{Math.round(data.coolingLoad)}%</span>
+                        </div>
+                        <div className="kpi">
+                            <label>COP</label>
+                            <span>3.2</span>
+                        </div>
+                        <div className="kpi">
+                            <label>Power</label>
+                            <span>{(realSystem.condenserPumps.filter(p => p.on).length * 45 + realSystem.chillers.filter(c => c.on).length * 150)} kW</span>
+                        </div>
+                    </div>
                 </div>
 
-                <div className="gauges-grid">
-                    <div className="gauge-item">
-                        <span className="label">Carga Térmica</span>
-                        <div className="value-large">{Math.round(data.coolingLoad)}%</div>
-                        <div className="progress-bar">
-                            <div className="fill" style={{ width: `${data.coolingLoad}%`, background: 'var(--acc-primary)' }}></div>
-                        </div>
-                    </div>
-
-                    <div className="gauge-item">
-                        <span className="label">Velocidad Ventilador</span>
-                        <div className="value-large">{Math.round(data.fanSpeed)} <small>RPM</small></div>
-                        <div className="progress-bar">
-                            <div className="fill" style={{ width: `${(data.fanSpeed / 3000) * 100}%`, background: 'var(--acc-secondary)' }}></div>
-                        </div>
-                    </div>
-
-                    <div className="gauge-item">
-                        <span className="label">Válvula 3-Vías</span>
-                        <div className="value-large">{Math.round(data.valvePosition)}%</div>
-                        <div className="progress-bar">
-                            <div className="fill" style={{ width: `${data.valvePosition}%`, background: 'var(--acc-success)' }}></div>
-                        </div>
-                    </div>
+                <div className="delta-mini">
+                    <div className="pipe cold"><small>In</small> {data.inletTemp.toFixed(1)}°</div>
+                    <div className="arrow">→</div>
+                    <div className="pipe hot"><small>Out</small> {data.returnTemp.toFixed(1)}°</div>
+                    <div className="delta-badge">Δ {(data.returnTemp - data.inletTemp).toFixed(1)}</div>
                 </div>
             </div>
 
-            {/* Temperature Delta Visualization */}
-            <div className="delta-panel glass-panel">
-                <h3>Delta T (ΔT) Monitor</h3>
-                <div className="delta-viz">
-                    <div className="pipe cold">
-                        <span className="pipe-label">Inlet</span>
-                        <span className="pipe-val">{data.inletTemp.toFixed(1)}°C</span>
-                    </div>
-                    <div className="chiller-unit">
-                        <div className="fan-animation"></div>
-                    </div>
-                    <div className="pipe hot">
-                        <span className="pipe-label">Return</span>
-                        <span className="pipe-val">{data.returnTemp.toFixed(1)}°C</span>
-                    </div>
-                </div>
-                <div className="delta-value">
-                    ΔT: {(data.returnTemp - data.inletTemp).toFixed(1)}°C
-                </div>
-            </div>
-
-            {/* Manual Controls */}
-            <div className="controls-panel glass-panel">
-                <h3>Control Manual</h3>
-                <div className="control-group">
-                    <label>Set Point Temperatura</label>
-                    <div className="slider-container">
-                        <input
-                            type="range"
-                            min="16" max="24" step="0.5"
-                            value={targetTemp}
-                            onChange={(e) => setTargetTemp(e.target.value)}
-                        />
-                        <span className="slider-val">{targetTemp}°C</span>
+            {/* Main: Asset Inventory Grid */}
+            <div className="assets-grid">
+                {/* Chillers Column */}
+                <div className="asset-col">
+                    <h4 className="col-title">Chillers (CHI)</h4>
+                    <div className="card-list">
+                        {realSystem.chillers.map(chi => (
+                            <div key={chi.id} className={`asset-card ${chi.on ? 'on' : 'off'}`}>
+                                <div className="card-header">
+                                    <span className="id">{chi.id}</span>
+                                    <label className="switch">
+                                        <input type="checkbox" checked={chi.on} onChange={() => mockApi.toggleChiller(chi.id)} />
+                                        <span className="slider round"></span>
+                                    </label>
+                                </div>
+                                <div className="card-body">
+                                    <div className="metric">
+                                        <span className="lbl">LWT</span>
+                                        <span className="val">{chi.leavingTemp.toFixed(1)}°C</span>
+                                    </div>
+                                    <div className="metric">
+                                        <span className="lbl">EWT</span>
+                                        <span className="val">{chi.enteringTemp.toFixed(1)}°C</span>
+                                    </div>
+                                    <div className="metric">
+                                        <span className="lbl">Flow</span>
+                                        <span className="val">{Math.round(chi.flow)} L/s</span>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
                     </div>
                 </div>
 
-                <div className="control-actions">
-                    <button className="action-btn emergency">Parada Emergencia</button>
-                    <button className="action-btn mode">Cambiar Modo Eco</button>
+                {/* Pumps Column */}
+                <div className="asset-col">
+                    <h4 className="col-title">Pumps (CDWP)</h4>
+                    <div className="card-list compact">
+                        {realSystem.condenserPumps.map(pump => (
+                            <div key={pump.id} className={`asset-card compact ${pump.on ? 'on' : 'off'}`}>
+                                <div className="card-header">
+                                    <span className="id">{pump.id}</span>
+                                    <span className="rpm">{Math.round(pump.rpm)} RPM</span>
+                                    <button className="toggle-btn-small" onClick={() => mockApi.togglePump('condenserPumps', pump.id)}>
+                                        {pump.on ? 'STOP' : 'START'}
+                                    </button>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+
+                    <h4 className="col-title mt-4">Pumps (CHWP)</h4>
+                    <div className="card-list compact">
+                        {realSystem.chilledPumps.map(pump => (
+                            <div key={pump.id} className={`asset-card compact ${pump.on ? 'on' : 'off'}`}>
+                                <div className="card-header">
+                                    <span className="id">{pump.id}</span>
+                                    <span className="rpm">{Math.round(pump.rpm)} RPM</span>
+                                    <button className="toggle-btn-small" onClick={() => mockApi.togglePump('chilledPumps', pump.id)}>
+                                        {pump.on ? 'STOP' : 'START'}
+                                    </button>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
                 </div>
             </div>
 
             <style>{`
         .cooling-dashboard {
             display: grid;
-            grid-template-columns: 2fr 1fr;
-            grid-template-rows: auto auto;
-            gap: 1.5rem;
+            grid-template-rows: auto 1fr;
+            gap: 1rem;
             height: 100%;
+            overflow-y: auto;
+            padding-right: 5px;
         }
 
         .glass-panel {
             background: var(--glass-surface);
             backdrop-filter: blur(var(--blur-amount));
             border: 1px solid var(--glass-border);
-            border-radius: 20px;
-            padding: 1.5rem;
+            border-radius: 16px;
+            padding: 1rem 1.5rem;
         }
-        
-        .status-panel { grid-column: 1 / 2; grid-row: 1 / 2; }
-        .delta-panel { grid-column: 2 / 3; grid-row: 1 / 3; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .controls-panel { grid-column: 1 / 2; grid-row: 2 / 3; }
 
-        .panel-header {
+        .global-status {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 2rem;
         }
         
-        .panel-header h3 { margin: 0; }
+        .status-header h3 { margin: 0 0 0.5rem 0; font-size: 1rem; color: var(--text-muted); }
+        
+        .kpi-row { display: flex; gap: 2rem; }
+        .kpi { display: flex; flex-direction: column; }
+        .kpi label { font-size: 0.75rem; color: var(--text-muted); }
+        .kpi span { font-size: 1.25rem; font-weight: 700; color: #fff; }
 
-        .status-badge {
-            padding: 4px 12px;
-            border-radius: 8px;
-            font-weight: 700;
-            font-size: 0.8rem;
-            letter-spacing: 1px;
-        }
-        .status-badge.active { background: rgba(56, 189, 248, 0.2); color: var(--acc-primary); border: 1px solid rgba(56, 189, 248, 0.4); }
-        
-        .gauges-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 2rem;
-        }
-        
-        .gauge-item { text-align: center; }
-        .label { color: var(--text-muted); font-size: 0.9rem; display: block; margin-bottom: 0.5rem; }
-        .value-large { font-size: 2.5rem; font-weight: 700; font-variant-numeric: tabular-nums; }
-        .value-large small { font-size: 1rem; color: var(--text-muted); font-weight: 400; }
-        
-        .progress-bar {
-            height: 6px;
-            background: rgba(255,255,255,0.1);
-            border-radius: 3px;
-            margin-top: 1rem;
-            overflow: hidden;
-        }
-        .fill { height: 100%; border-radius: 3px; transition: width 0.5s ease; }
-
-        /* Delta Viz */
-        .delta-viz {
+        .delta-mini {
             display: flex;
             align-items: center;
             gap: 1rem;
-            margin: 2rem 0;
-        }
-        
-        .pipe {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            background: rgba(0,0,0,0.3);
-            padding: 1rem;
+            background: rgba(0,0,0,0.2);
+            padding: 0.5rem 1rem;
             border-radius: 12px;
-            width: 80px;
         }
-        .pipe.cold { border-bottom: 3px solid var(--acc-primary); }
-        .pipe.hot { border-bottom: 3px solid var(--acc-danger); }
-        
-        .pipe-label { font-size: 0.75rem; color: var(--text-muted); }
-        .pipe-val { font-size: 1.2rem; font-weight: 700; margin-top: 5px; }
-        
-        .chiller-unit {
-            width: 60px;
-            height: 60px;
-            border: 2px solid rgba(255,255,255,0.2);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        .fan-animation {
-            width: 40px;
-            height: 40px;
-            border: 2px dashed rgba(255,255,255,0.4);
-            border-radius: 50%;
-            animation: spin 2s linear infinite;
-        }
-        
-        @keyframes spin { 100% { transform: rotate(360deg); } }
-        
-        .delta-value {
-            font-size: 1.5rem;
-            font-weight: 600;
-            color: var(--text-main);
-        }
+        .pipe { font-weight: 600; font-size: 1.1rem; }
+        .pipe small { font-size: 0.7rem; color: var(--text-muted); margin-right: 4px; font-weight: 400; }
+        .pipe.cold { color: var(--acc-primary); }
+        .pipe.hot { color: var(--acc-danger); }
+        .delta-badge { background: rgba(255,255,255,0.1); padding: 2px 8px; border-radius: 6px; font-size: 0.9rem; }
 
-        /* Controls */
-        .control-group {
-            margin-bottom: 1.5rem;
+        .assets-grid {
+            display: grid;
+            grid-template-columns: 2fr 1.5fr;
+            gap: 1.5rem;
         }
         
-        .slider-container {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            margin-top: 0.5rem;
+        .col-title {
+            margin: 0 0 1rem 0;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding-bottom: 0.5rem;
         }
         
-        input[type=range] {
-            flex: 1;
-            height: 6px;
-            background: rgba(255,255,255,0.1);
-            border-radius: 3px;
-            appearance: none;
+        .mt-4 { margin-top: 1.5rem; }
+
+        .card-list {
+            display: grid;
+            gap: 0.75rem;
         }
         
-        input[type=range]::-webkit-slider-thumb {
-            appearance: none;
-            width: 20px;
-            height: 20px;
-            background: var(--acc-primary);
-            border-radius: 50%;
-            cursor: pointer;
-            box-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
-        }
-        
-        .control-actions {
-            display: flex;
-            gap: 1rem;
-        }
-        
-        .action-btn {
-            padding: 0.75rem 1.5rem;
-            border-radius: 10px;
-            border: 1px solid rgba(255,255,255,0.1);
-            background: rgba(255,255,255,0.05);
-            color: white;
-            font-weight: 600;
-            cursor: pointer;
-            flex: 1;
+        /* Chiller Card */
+        .asset-card {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 12px;
+            padding: 1rem;
             transition: all 0.2s;
         }
         
-        .action-btn.emergency { background: rgba(239, 68, 68, 0.15); border-color: rgba(239, 68, 68, 0.3); color: var(--acc-danger); }
-        .action-btn.emergency:hover { background: rgba(239, 68, 68, 0.25); }
+        .asset-card.on {
+            border-color: rgba(56, 189, 248, 0.3);
+            background: linear-gradient(90deg, rgba(56, 189, 248, 0.05), transparent);
+        }
         
-        .action-btn.mode:hover { background: rgba(255,255,255,0.1); }
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.75rem;
+        }
+        
+        .id { font-weight: 700; color: #fff; }
+        
+        .card-body {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 0.5rem;
+        }
+        
+        .metric { display: flex; flex-direction: column; }
+        .metric .lbl { font-size: 0.65rem; color: var(--text-muted); }
+        .metric .val { font-size: 0.9rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+
+        /* Compact Pump Card */
+        .asset-card.compact {
+            padding: 0.75rem 1rem;
+        }
+        .asset-card.compact .card-header { margin-bottom: 0; }
+        
+        .rpm { font-family: monospace; color: var(--acc-secondary); font-size: 0.9rem; }
+        
+        .toggle-btn-small {
+            background: rgba(255,255,255,0.1);
+            border: none;
+            color: #fff;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            cursor: pointer;
+        }
+        .toggle-btn-small:hover { background: rgba(255,255,255,0.2); }
+
+        /* Switch UI */
+        .switch { position: relative; display: inline-block; width: 34px; height: 20px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider {
+            position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #334155; transition: .4s; border-radius: 20px;
+        }
+        .slider:before {
+            position: absolute; content: ""; height: 14px; width: 14px; left: 3px; bottom: 3px;
+            background-color: white; transition: .4s; border-radius: 50%;
+        }
+        input:checked + .slider { background-color: var(--acc-success); }
+        input:checked + .slider:before { transform: translateX(14px); }
       `}</style>
         </div>
     );

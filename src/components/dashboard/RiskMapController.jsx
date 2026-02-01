@@ -13,8 +13,6 @@ export default function RiskMapController() {
 
     const selectedLocation = LOCATIONS.find((l) => l.id === selectedId) || LOCATIONS[0];
 
-    // We pass ALL markers to the globe, but we might want to highlight the selected one
-    // or just center the camera on it.
     const markers = LOCATIONS.map((loc) => ({
         lat: loc.lat,
         lon: loc.lon,

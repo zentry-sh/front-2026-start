@@ -48,6 +48,15 @@ export interface CoolingSystemState {
   valvePosition: number; // % Open
 }
 
+export interface RealSystemData {
+  // Condensed structure for the detailed inventory
+  chillers: { id: string; on: boolean; setPoint: number; leavingTemp: number; enteringTemp: number; flow: number }[];
+  condenserPumps: { id: string; on: boolean; rpm: number }[];
+  chilledPumps: { id: string; on: boolean; rpm: number }[];
+  towers: { id: string; fans: number[]; valves: boolean[] }[]; // Simplified for list
+  totalPower: number;
+}
+
 export interface DashboardData {
   serverMetrics: ServerMetrics;
   climate: ClimateData;
@@ -55,6 +64,7 @@ export interface DashboardData {
   recommendations: Recommendation[];
   tariff: TariffData;
   coolingSystem: CoolingSystemState;
+  realSystem: RealSystemData;
 }
 
 export class MockApiService {
@@ -76,6 +86,32 @@ export class MockApiService {
       returnTemp: 26.2,
       fanSpeed: 2400,
       valvePosition: 45
+    },
+    realSystem: {
+      chillers: Array.from({ length: 6 }, (_, i) => ({
+        id: `CHI0${i + 1}`,
+        on: i < 3, // Start with 3 active
+        setPoint: 7.0,
+        leavingTemp: 7.2,
+        enteringTemp: 12.5,
+        flow: 120
+      })),
+      condenserPumps: Array.from({ length: 6 }, (_, i) => ({
+        id: `CDWP0${i + 1}`,
+        on: i < 3,
+        rpm: i < 3 ? 1450 : 0
+      })),
+      chilledPumps: Array.from({ length: 6 }, (_, i) => ({
+        id: `CHWP0${i + 1}`,
+        on: i < 3,
+        rpm: i < 3 ? 1450 : 0
+      })),
+      towers: Array.from({ length: 6 }, (_, i) => ({
+        id: `CT0${i + 1}`,
+        fans: [0, 0], // Normalized speed 0-1
+        valves: [i < 3]
+      })),
+      totalPower: 0
     }
   };
 
@@ -219,6 +255,59 @@ export class MockApiService {
     // Temperatures fluctuate slightly
     this.currentState.coolingSystem.inletTemp = 18 + (Math.random() * 0.5);
     this.currentState.coolingSystem.returnTemp = 24 + (this.currentState.coolingSystem.coolingLoad * 0.05) + (Math.random() * 0.5);
+
+    // 5. Update Real System Details (Simulated Physics)
+    const loadFactor = this.currentState.coolingSystem.coolingLoad / 100;
+
+    this.currentState.realSystem.chillers.forEach(chi => {
+      if (chi.on) {
+        // Simulate realistic fluctuations
+        chi.enteringTemp = 12 + (loadFactor * 2) + (Math.random() * 0.2);
+        chi.leavingTemp = chi.setPoint + (Math.random() * 0.1); // Close to setpoint
+        chi.flow = 110 + (loadFactor * 20) + (Math.random() * 2);
+      } else {
+        // Return to ambient if off
+        chi.enteringTemp += (20 - chi.enteringTemp) * 0.05;
+        chi.leavingTemp += (20 - chi.leavingTemp) * 0.05;
+        chi.flow = 0;
+      }
+    });
+
+    this.currentState.realSystem.condenserPumps.forEach(pump => {
+      if (pump.on) {
+        pump.rpm = 1400 + (loadFactor * 100) + (Math.random() * 10); // Var around 1400-1500
+      } else {
+        pump.rpm = 0;
+      }
+    });
+
+    // Check synchronization (Simple logic: if Chiller 1 is on, ensure pump 1 is on for "correct" operation)
+    // For now independent to allow user control
+  }
+
+  // --- Real System Control Methods ---
+  public toggleChiller(id: string) {
+    const chi = this.currentState.realSystem.chillers.find(c => c.id === id);
+    if (chi) {
+      chi.on = !chi.on;
+      this.notifySubscribers();
+    }
+  }
+
+  public setChillerSetPoint(id: string, temp: number) {
+    const chi = this.currentState.realSystem.chillers.find(c => c.id === id);
+    if (chi) {
+      chi.setPoint = temp;
+      this.notifySubscribers();
+    }
+  }
+
+  public togglePump(type: 'condenserPumps' | 'chilledPumps', id: string) {
+    const pump = this.currentState.realSystem[type].find(p => p.id === id);
+    if (pump) {
+      pump.on = !pump.on;
+      this.notifySubscribers();
+    }
   }
 }
 
