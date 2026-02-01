@@ -1,0 +1,39 @@
+---
+import DashboardLayout from '../layouts/DashboardLayout.astro';
+---
+
+<DashboardLayout>
+  <span slot="title">Gestión de Riesgos</span>
+  
+  <div class="placeholder-content">
+    <div class="glass-panel">
+        <h2>Mapa de Riesgos Globales</h2>
+        <p>Vista detallada de incidentes y anomalías térmicas en tiempo real.</p>
+        <!-- Future: Move RiskMap here or expand on it -->
+        <div class="construction-Icon">🚧</div>
+    </div>
+  </div>
+</DashboardLayout>
+
+<style>
+    .placeholder-content {
+        padding: 2rem;
+        height: 100%;
+    }
+    .glass-panel {
+        background: var(--glass-surface);
+        backdrop-filter: blur(var(--blur-amount));
+        border: 1px solid var(--glass-border);
+        border-radius: 20px;
+        padding: 3rem;
+        text-align: center;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+    }
+    h2 { margin-bottom: 0.5rem; color: var(--text-main); }
+    p { color: var(--text-muted); }
+    .construction-Icon { font-size: 4rem; margin-top: 2rem; }
+</style>

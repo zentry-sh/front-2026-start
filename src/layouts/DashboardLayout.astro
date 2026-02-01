@@ -23,7 +23,7 @@
                     <span class="logo-text">HydroOps</span>
                 </div>
                 <nav>
-                    <a href="/dashboard" class="nav-item active">
+                    <a href="/dashboard" class={`nav-item ${Astro.url.pathname === '/dashboard' ? 'active' : ''}`}>
                         <svg
                             xmlns="http://www.w3.org/2000/svg"
                             width="20"
@@ -50,7 +50,7 @@
                         >
                         Dashboard
                     </a>
-                    <a href="#" class="nav-item">
+                    <a href="/risk" class={`nav-item ${Astro.url.pathname === '/risk' ? 'active' : ''}`}>
                         <svg
                             xmlns="http://www.w3.org/2000/svg"
                             width="20"
@@ -73,7 +73,7 @@
                         >
                         Riesgos
                     </a>
-                    <a href="#" class="nav-item">
+                    <a href="/cooling" class={`nav-item ${Astro.url.pathname === '/cooling' ? 'active' : ''}`}>
                         <svg
                             xmlns="http://www.w3.org/2000/svg"
                             width="20"
@@ -89,7 +89,7 @@
                         >
                         Refrigeración
                     </a>
-                    <a href="#" class="nav-item">
+                    <a href="/reports" class={`nav-item ${Astro.url.pathname === '/reports' ? 'active' : ''}`}>
                         <svg
                             xmlns="http://www.w3.org/2000/svg"
                             width="20"
