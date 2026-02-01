@@ -1,11 +1,214 @@
 ---
-import Welcome from '../components/Welcome.astro';
-import Layout from '../layouts/Layout.astro';
-
-// Welcome to Astro! Wondering what to do next? Check out the Astro documentation at https://docs.astro.build
-// Don't want to use any of this? Delete everything in this file, the `assets`, `components`, and `layouts` directories, and start fresh.
+import Layout from "../layouts/Layout.astro";
 ---
 
-<Layout>
-	<Welcome />
+<Layout title="HydroOps - Login">
+  <main class="login-container">
+    <div class="login-card">
+      <div class="logo-area">
+        <!-- Logo Icon -->
+        <div class="logo-icon"></div>
+        <h1>HydroOps</h1>
+        <p class="subtitle">Data Center Water Management</p>
+      </div>
+
+      <form class="login-form" action="/dashboard">
+        <div class="input-group">
+          <label for="email">Email Corporativo</label>
+          <input
+            type="email"
+            id="email"
+            placeholder="admin@datacenter.com"
+            value="demo@hydroops.io"
+            readonly
+          />
+        </div>
+
+        <div class="input-group">
+          <label for="password">Contraseña</label>
+          <input type="password" id="password" value="********" readonly />
+        </div>
+
+        <button type="submit" class="login-btn">
+          Iniciar Sesión
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            ><path d="M5 12h14"></path><path d="M12 5l7 7-7 7"></path></svg
+          >
+        </button>
+
+        <p class="disclaimer">Acceso restringido a personal autorizado.</p>
+      </form>
+    </div>
+  </main>
 </Layout>
+
+<style>
+  /* Import font again here since Layout is minimal */
+  @import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap");
+
+  :global(body) {
+    font-family: "Inter", sans-serif;
+    background-color: #0f172a;
+    color: #f8fafc;
+    margin: 0;
+    padding: 0;
+  }
+
+  .login-container {
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%);
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Background decorative elements */
+  .login-container::before {
+    content: "";
+    position: absolute;
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(
+      circle,
+      rgba(14, 165, 233, 0.15) 0%,
+      transparent 70%
+    );
+    top: -100px;
+    left: -100px;
+    border-radius: 50%;
+  }
+
+  .login-container::after {
+    content: "";
+    position: absolute;
+    width: 400px;
+    height: 400px;
+    background: radial-gradient(
+      circle,
+      rgba(16, 185, 129, 0.1) 0%,
+      transparent 70%
+    );
+    bottom: -50px;
+    right: -50px;
+    border-radius: 50%;
+  }
+
+  .login-card {
+    background: rgba(30, 41, 59, 0.7);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 3rem;
+    border-radius: 24px;
+    width: 100%;
+    max-width: 420px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    z-index: 10;
+  }
+
+  .logo-area {
+    text-align: center;
+    margin-bottom: 2.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .logo-icon {
+    width: 48px;
+    height: 48px;
+    background: linear-gradient(135deg, #0ea5e9, #2563eb);
+    border-radius: 12px;
+    box-shadow: 0 0 20px rgba(14, 165, 233, 0.5);
+    margin-bottom: 1rem;
+  }
+
+  h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    margin: 0;
+    background: linear-gradient(to right, #fff, #94a3b8);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .subtitle {
+    color: #94a3b8;
+    margin: 0.5rem 0 0;
+    font-size: 0.9rem;
+  }
+
+  .login-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  label {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: #cbd5e1;
+  }
+
+  input {
+    background: rgba(15, 23, 42, 0.5);
+    border: 1px solid #334155;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    color: #fff;
+    font-family: inherit;
+    transition: all 0.2s;
+  }
+
+  input:focus {
+    outline: none;
+    border-color: #0ea5e9;
+    box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.2);
+  }
+
+  .login-btn {
+    background: linear-gradient(135deg, #0ea5e9, #0284c7);
+    color: white;
+    border: none;
+    padding: 0.85rem;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-top: 1rem;
+    box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3);
+  }
+
+  .login-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 16px rgba(14, 165, 233, 0.4);
+  }
+
+  .disclaimer {
+    text-align: center;
+    font-size: 0.75rem;
+    color: #64748b;
+    margin-top: 1rem;
+  }
+</style>

@@ -1,0 +1,194 @@
+---
+const alerts = [
+    {
+        id: 1,
+        level: "critical",
+        title: "Nivel Crítico en Tanque Auxiliar",
+        time: "2 min ago",
+        desc: "Reserva al 15%. Iniciar protocolo de contingencia.",
+    },
+    {
+        id: 2,
+        level: "warning",
+        title: "Eficiencia de Enfriamiento Baja",
+        time: "24 min ago",
+        desc: "Torre B operando fuera de rango óptimo.",
+    },
+    {
+        id: 3,
+        level: "info",
+        title: "Pronóstico de Sequía Actualizado",
+        time: "2h ago",
+        desc: "Incremento de riesgo hídrico para Q3 2026.",
+    },
+];
+---
+
+<div class="alert-feed">
+    <div class="feed-header">
+        <h3>Alertas en Tiempo Real</h3>
+        <a href="#" class="view-all">Ver todo</a>
+    </div>
+    <div class="feed-list">
+        {
+            alerts.map((alert) => (
+                <div class={`alert-item ${alert.level}`}>
+                    <div class="alert-icon">
+                        {alert.level === "critical" && (
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="20"
+                                height="20"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                            >
+                                <circle cx="12" cy="12" r="10" />
+                                <line x1="12" y1="8" x2="12" y2="12" />
+                                <line x1="12" y1="16" x2="12.01" y2="16" />
+                            </svg>
+                        )}
+                        {alert.level === "warning" && (
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="20"
+                                height="20"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                            >
+                                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                                <line x1="12" y1="9" x2="12" y2="13" />
+                                <line x1="12" y1="17" x2="12.01" y2="17" />
+                            </svg>
+                        )}
+                        {alert.level === "info" && (
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="20"
+                                height="20"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                            >
+                                <circle cx="12" cy="12" r="10" />
+                                <line x1="12" y1="16" x2="12" y2="12" />
+                                <line x1="12" y1="8" x2="12.01" y2="8" />
+                            </svg>
+                        )}
+                    </div>
+                    <div class="alert-content">
+                        <div class="alert-top">
+                            <span class="alert-title">{alert.title}</span>
+                            <span class="alert-time">{alert.time}</span>
+                        </div>
+                        <p class="alert-desc">{alert.desc}</p>
+                    </div>
+                </div>
+            ))
+        }
+    </div>
+</div>
+
+<style>
+    .alert-feed {
+        background: var(--bg-panel);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 16px;
+        padding: 1.5rem;
+        height: 100%;
+    }
+
+    .feed-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+
+    .feed-header h3 {
+        margin: 0;
+        font-size: 1.1rem;
+        font-weight: 600;
+    }
+
+    .view-all {
+        color: var(--acc-primary);
+        font-size: 0.85rem;
+        text-decoration: none;
+    }
+
+    .feed-list {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .alert-item {
+        display: flex;
+        gap: 1rem;
+        padding: 1rem;
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.02);
+        border-left: 3px solid transparent;
+    }
+
+    .alert-item.critical {
+        background: rgba(239, 68, 68, 0.05);
+        border-left-color: var(--acc-danger);
+    }
+    .alert-item.critical .alert-icon {
+        color: var(--acc-danger);
+    }
+
+    .alert-item.warning {
+        background: rgba(245, 158, 11, 0.05);
+        border-left-color: var(--acc-warning);
+    }
+    .alert-item.warning .alert-icon {
+        color: var(--acc-warning);
+    }
+
+    .alert-item.info {
+        border-left-color: var(--acc-primary);
+    }
+    .alert-item.info .alert-icon {
+        color: var(--acc-primary);
+    }
+
+    .alert-content {
+        flex: 1;
+    }
+
+    .alert-top {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 0.25rem;
+    }
+
+    .alert-title {
+        font-weight: 600;
+        font-size: 0.95rem;
+    }
+
+    .alert-time {
+        font-size: 0.75rem;
+        color: var(--text-muted);
+    }
+
+    .alert-desc {
+        margin: 0;
+        font-size: 0.85rem;
+        color: var(--text-muted);
+        line-height: 1.4;
+    }
+</style>

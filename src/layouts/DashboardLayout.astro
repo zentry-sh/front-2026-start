@@ -1,0 +1,358 @@
+<!doctype html>
+<html lang="es">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width" />
+        <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+        <meta name="generator" content={Astro.generator} />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+            rel="stylesheet"
+        />
+        <title>HydroOps | Data Center Water Mgmt</title>
+    </head>
+    <body>
+        <div class="app-container">
+            <aside class="sidebar">
+                <div class="logo-area">
+                    <div class="logo-icon"></div>
+                    <span class="logo-text">HydroOps</span>
+                </div>
+                <nav>
+                    <a href="/dashboard" class="nav-item active">
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="20"
+                            height="20"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            ><rect x="3" y="3" width="7" height="7"></rect><rect
+                                x="14"
+                                y="3"
+                                width="7"
+                                height="7"></rect><rect
+                                x="14"
+                                y="14"
+                                width="7"
+                                height="7"></rect><rect
+                                x="3"
+                                y="14"
+                                width="7"
+                                height="7"></rect></svg
+                        >
+                        Dashboard
+                    </a>
+                    <a href="#" class="nav-item">
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="20"
+                            height="20"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            ><circle cx="12" cy="12" r="10"></circle><line
+                                x1="12"
+                                y1="8"
+                                x2="12"
+                                y2="12"></line><line
+                                x1="12"
+                                y1="16"
+                                x2="12.01"
+                                y2="16"></line></svg
+                        >
+                        Riesgos
+                    </a>
+                    <a href="#" class="nav-item">
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="20"
+                            height="20"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            ><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"
+                            ></path></svg
+                        >
+                        Refrigeración
+                    </a>
+                    <a href="#" class="nav-item">
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="20"
+                            height="20"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            ><path
+                                d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"
+                            ></path><polyline points="14 2 14 8 20 8"
+                            ></polyline><line x1="16" y1="13" x2="8" y2="13"
+                            ></line><line x1="16" y1="17" x2="8" y2="17"
+                            ></line><polyline points="10 9 9 9 8 9"
+                            ></polyline></svg
+                        >
+                        Reportes
+                    </a>
+                </nav>
+                <div class="sidebar-footer">
+                    <div class="user-profile">
+                        <div class="avatar">Admin</div>
+                        <div class="user-info">
+                            <span class="user-name">Ing. Soporte</span>
+                            <span class="user-role">CDMX-01</span>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+            <main class="main-content">
+                <header class="top-bar">
+                    <h1 class="page-title">
+                        <slot name="title">Overview</slot>
+                    </h1>
+                    <div class="top-actions">
+                        <div class="status-indicator">
+                            <span class="dot"></span>
+                            Operación Normal
+                        </div>
+                        <button class="icon-btn">
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="20"
+                                height="20"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                ><path
+                                    d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"
+                                ></path><path d="M13.73 21a2 2 0 0 1-3.46 0"
+                                ></path></svg
+                            >
+                        </button>
+                    </div>
+                </header>
+
+                <div class="content-scroll">
+                    <slot />
+                </div>
+            </main>
+        </div>
+    </body>
+</html>
+
+<style is:global>
+    :root {
+        --bg-dark: #0f172a;
+        --bg-panel: #1e293b;
+        --acc-primary: #0ea5e9; /* Sky blue */
+        --acc-success: #10b981; /* Emerald */
+        --acc-danger: #ef4444;
+        --acc-warning: #f59e0b;
+        --text-main: #f8fafc;
+        --text-muted: #94a3b8;
+        --border-color: #334155;
+    }
+
+    html,
+    body {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+        font-family: "Inter", sans-serif;
+        background-color: var(--bg-dark);
+        color: var(--text-main);
+        overflow: hidden;
+    }
+
+    * {
+        box-sizing: border-box;
+    }
+
+    /* Layout Grid */
+    .app-container {
+        display: grid;
+        grid-template-columns: 260px 1fr;
+        height: 100vh;
+        width: 100vw;
+    }
+
+    /* Sidebar */
+    .sidebar {
+        background-color: rgba(30, 41, 59, 0.7);
+        backdrop-filter: blur(10px);
+        border-right: 1px solid var(--border-color);
+        display: flex;
+        flex-direction: column;
+        padding: 1.5rem;
+    }
+
+    .logo-area {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 3rem;
+    }
+
+    .logo-icon {
+        width: 32px;
+        height: 32px;
+        background: linear-gradient(135deg, var(--acc-primary), #2563eb);
+        border-radius: 8px;
+        box-shadow: 0 0 15px rgba(14, 165, 233, 0.4);
+    }
+
+    .logo-text {
+        font-size: 1.25rem;
+        font-weight: 700;
+        letter-spacing: -0.5px;
+        color: #fff;
+    }
+
+    .nav-item {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        color: var(--text-muted);
+        text-decoration: none;
+        padding: 0.75rem 1rem;
+        border-radius: 8px;
+        transition: all 0.2s;
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+    }
+
+    .nav-item:hover,
+    .nav-item.active {
+        background-color: rgba(14, 165, 233, 0.1);
+        color: var(--acc-primary);
+    }
+
+    .sidebar-footer {
+        margin-top: auto;
+        padding-top: 1rem;
+        border-top: 1px solid var(--border-color);
+    }
+
+    .user-profile {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .avatar {
+        width: 40px;
+        height: 40px;
+        background-color: var(--border-color);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--text-muted);
+    }
+
+    .user-info {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .user-name {
+        font-size: 0.9rem;
+        font-weight: 500;
+    }
+
+    .user-role {
+        font-size: 0.75rem;
+        color: var(--text-muted);
+    }
+
+    /* Main Area */
+    .main-content {
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        position: relative;
+        background: radial-gradient(
+            circle at top right,
+            rgba(14, 165, 233, 0.05),
+            transparent 40%
+        );
+    }
+
+    .top-bar {
+        height: 80px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 2rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .page-title {
+        font-size: 1.5rem;
+        font-weight: 600;
+    }
+
+    .top-actions {
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+    }
+
+    .status-indicator {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.85rem;
+        color: var(--acc-success);
+        background: rgba(16, 185, 129, 0.1);
+        padding: 0.4rem 0.8rem;
+        border-radius: 20px;
+        border: 1px solid rgba(16, 185, 129, 0.2);
+    }
+
+    .dot {
+        width: 8px;
+        height: 8px;
+        background-color: var(--acc-success);
+        border-radius: 50%;
+        box-shadow: 0 0 8px var(--acc-success);
+    }
+
+    .icon-btn {
+        background: none;
+        border: none;
+        color: var(--text-muted);
+        cursor: pointer;
+        transition: color 0.2s;
+    }
+
+    .icon-btn:hover {
+        color: var(--text-main);
+    }
+
+    .content-scroll {
+        flex: 1;
+        overflow-y: auto;
+        padding: 2rem;
+    }
+</style>

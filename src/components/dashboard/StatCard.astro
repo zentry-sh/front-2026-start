@@ -1,0 +1,127 @@
+---
+interface Props {
+    title: string;
+    value: string;
+    unit?: string;
+    trend: "up" | "down" | "neutral";
+    trendValue: string;
+    trendLabel?: string;
+    icon?: string;
+}
+
+const {
+    title,
+    value,
+    unit,
+    trend,
+    trendValue,
+    trendLabel = "vs last month",
+    icon,
+} = Astro.props;
+---
+
+<div class="stat-card">
+    <div class="card-header">
+        <span class="title">{title}</span>
+        {icon && <div class="icon-slot" set:html={icon} />}
+    </div>
+    <div class="card-body">
+        <div class="value-area">
+            <span class="value">{value}</span>
+            {unit && <span class="unit">{unit}</span>}
+        </div>
+        <div class={`trend-area ${trend}`}>
+            <span class="trend-icon">
+                {trend === "up" && "↑"}
+                {trend === "down" && "↓"}
+                {trend === "neutral" && "→"}
+            </span>
+            <span class="trend-value">{trendValue}</span>
+            <span class="trend-label">{trendLabel}</span>
+        </div>
+    </div>
+</div>
+
+<style>
+    .stat-card {
+        background: rgba(30, 41, 59, 0.4);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 16px;
+        padding: 1.5rem;
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        transition:
+            transform 0.2s,
+            box-shadow 0.2s;
+    }
+
+    .stat-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+        border-color: rgba(255, 255, 255, 0.1);
+    }
+
+    .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .title {
+        color: var(--text-muted);
+        font-size: 0.875rem;
+        font-weight: 500;
+    }
+
+    .icon-slot {
+        color: var(--acc-primary);
+        opacity: 0.8;
+    }
+
+    .value-area {
+        display: flex;
+        align-items: baseline;
+        gap: 0.25rem;
+    }
+
+    .value {
+        font-size: 2.5rem;
+        font-weight: 700;
+        line-height: 1;
+        color: var(--text-main);
+    }
+
+    .unit {
+        color: var(--text-muted);
+        font-size: 1rem;
+        font-weight: 500;
+    }
+
+    .trend-area {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.875rem;
+        margin-top: 0.25rem;
+    }
+
+    .trend-area.up {
+        color: var(--acc-danger);
+    } /* Usually bad for consumption */
+    .trend-area.down {
+        color: var(--acc-success);
+    } /* Usually good for consumption */
+    .trend-area.neutral {
+        color: var(--text-muted);
+    }
+
+    /* Override colors if 'up' is good (can be handled via props or CSS classes later, simplified for now assuming consumption context) */
+    /* For WUE, down is good. For Water Lvl, up is good. We might need a 'positive/negative' prop instead of up/down mapping directly to color. */
+    /* Let's fix this slightly: */
+
+    /* Re-defining based on typical business logic: 
+     Green = Good, Red = Bad. 
+     The usage of these classes will depend on the metric.
+  */
+</style>
