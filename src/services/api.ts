@@ -143,10 +143,8 @@ export class MockApiService {
 
   private locations = [
     { id: 'cdmx', name: 'CDMX - Centro', lat: 19.4326, lon: -99.1332, risk: 'medium' as const },
-    { id: 'mty', name: 'Monterrey - Norte', lat: 25.6714, lon: -100.3097, risk: 'high' as const }, // Water stress
-    { id: 'qro', name: 'Querétaro - Bajío', lat: 20.5888, lon: -100.3899, risk: 'low' as const },
-    { id: 'bog', name: 'Bogotá - DC1', lat: 4.7110, lon: -74.0721, risk: 'low' as const },
-    { id: 'sp', name: 'São Paulo - South', lat: -23.5505, lon: -46.6333, risk: 'medium' as const }
+    { id: 'gdl', name: 'Guadalajara - Occidente', lat: 20.6597, lon: -103.3496, risk: 'high' as const }, // Water stress
+    { id: 'oax', name: 'Oaxaca - Sur', lat: 17.0732, lon: -96.7266, risk: 'high' as const } // Seismic
   ];
 
   constructor() {
@@ -189,9 +187,12 @@ export class MockApiService {
     await this.updateFromRealWeather();
 
     // Simulate specific risk profiles per location
-    if (id === 'mty') {
-      this.currentState.riskMetrics.water.reservoirLevel = 35; // Critical in MTY
-      this.currentState.riskMetrics.water.daysOfAutonomy = 1.2;
+    if (id === 'gdl') {
+      this.currentState.riskMetrics.water.reservoirLevel = 45; // Water stress in GDL
+      this.currentState.riskMetrics.water.daysOfAutonomy = 2.5;
+    } else if (id === 'oax') {
+      this.currentState.riskMetrics.water.reservoirLevel = 60;
+      this.currentState.riskMetrics.water.daysOfAutonomy = 3.5;
     } else {
       this.currentState.riskMetrics.water.reservoirLevel = 75 + Math.random() * 10;
       this.currentState.riskMetrics.water.daysOfAutonomy = 5 + Math.random();

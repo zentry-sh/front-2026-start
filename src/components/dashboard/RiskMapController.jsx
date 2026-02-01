@@ -3,9 +3,9 @@ import EarthGlobe from "./EarthGlobe.jsx";
 import "./RiskMap.css";
 
 const LOCATIONS = [
-    { id: "cdmx", name: "CDMX - Centro", lat: 19.4326, lon: -99.1332, label: "CDMX", risk: "high", riskLabel: "Alto Riesgo" },
-    { id: "mty", name: "Monterrey, NL", lat: 25.6866, lon: -100.3161, label: "MTY", risk: "critical", riskLabel: "Crítico" },
-    { id: "oax", name: "Oaxaca, Oax", lat: 17.0732, lon: -96.7266, label: "OAX", risk: "med", riskLabel: "Medio" },
+    { id: "cdmx", name: "CDMX - Centro", lat: 19.4326, lon: -99.1332, label: "CDMX", risk: "med", riskLabel: "Medio" },
+    { id: "gdl", name: "Guadalajara, Jal", lat: 20.6597, lon: -103.3496, label: "GDL", risk: "high", riskLabel: "Alto (Hídrico)" },
+    { id: "oax", name: "Oaxaca, Oax", lat: 17.0732, lon: -96.7266, label: "OAX", risk: "critical", riskLabel: "Crítico (Sísmico)" },
 ];
 
 export default function RiskMapController() {

@@ -5,7 +5,7 @@ import { WeatherService } from '../../services/WeatherService';
 
 const LOCATIONS = [
   { id: "cdmx", name: "CDMX - Centro", lat: 19.4326, lon: -99.1332 },
-  { id: "mty", name: "Monterrey, NL", lat: 25.6866, lon: -100.3161 },
+  { id: "gdl", name: "Guadalajara, Jal", lat: 20.6597, lon: -103.3496 },
   { id: "oax", name: "Oaxaca, Oax", lat: 17.0732, lon: -96.7266 },
 ];
 
