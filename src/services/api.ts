@@ -151,6 +151,8 @@ export class MockApiService {
     this.weatherService = WeatherService.getInstance();
     this.currentState.registeredLocations = this.locations;
     this.loadState();
+    // FORCE OVERRIDE locations from code to fix stale localStorage
+    this.currentState.registeredLocations = this.locations;
   }
 
   // Iniciar simulación de datos (Polling + Real Weather Fetch)

@@ -26,7 +26,7 @@ export default function ClimateMonitor() {
     setSelectedLoc(locId);
     const loc = LOCATIONS.find(l => l.id === locId);
     if (loc) {
-      mockApi.setLocation(loc.name, loc.lat, loc.lon);
+      mockApi.setLocation(loc.id);
     }
   };
 
