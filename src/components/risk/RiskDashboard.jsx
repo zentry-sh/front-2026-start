@@ -1,191 +1,130 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { mockApi } from '../../services/api';
 import EarthGlobe from '../dashboard/EarthGlobe';
 
 export default function RiskDashboard() {
     const [data, setData] = useState(null);
-    const [history, setHistory] = useState({ hz: [] });
-    const globeRef = useRef(null);
+    const [rackTemps, setRackTemps] = useState([]);
 
     useEffect(() => {
         mockApi.startSimulation();
         const unsubscribe = mockApi.subscribe((newData) => {
-            // Clone objects to force React re-render, especially nested riskMetrics
-            setData({
-                ...newData,
-                riskMetrics: { ...newData.riskMetrics, grid: { ...newData.riskMetrics.grid }, water: { ...newData.riskMetrics.water } }
-            });
+            setData(newData);
 
-            // Maintain history for Sparklines
-            setHistory(prev => {
-                const newHz = [...prev.hz, newData.riskMetrics.grid.frequency].slice(-50); // Keep last 50 points
-                return { hz: newHz };
+            // Simulate Rack Temperatures based on Global Server Temp
+            // Add noise to make them look independent
+            // If global temp is > 26, racks start getting HOT
+            const baseTemp = newData.serverMetrics.temp;
+            const racks = Array.from({ length: 12 }, (_, i) => {
+                const noise = (Math.random() - 0.5) * 4;
+                // Some racks are hotter (simulating hotspots) if index is divisible by 4
+                const hotspot = (i % 4 === 0) ? 2 : 0;
+                return baseTemp + noise + hotspot;
             });
+            setRackTemps(racks);
         });
         return () => unsubscribe();
     }, []);
 
-    if (!data) return <div className="loading">Inicializando Análisis de Riesgo...</div>;
+    if (!data) return <div className="loading">Cargando Riesgos...</div>;
 
-    const { riskMetrics, locationName } = data;
-
-    // Helper for grid sparkline
-    const Sparkline = ({ points, color = '#34d399', min = 59.9, max = 60.1 }) => {
-        const height = 40;
-        const width = 120;
-
-        // Normalize points to SVG path
-        const pathData = points.map((p, i) => {
-            const x = (i / (points.length - 1 || 1)) * width;
-            const y = height - ((p - min) / (max - min)) * height;
-            return `${x},${y}`;
-        }).join(' L ');
-
-        return (
-            <svg width="100%" height="40" viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none">
-                <defs>
-                    <linearGradient id="gradSpark" x1="0" x2="0" y1="0" y2="1">
-                        <stop offset="0%" stopColor={color} stopOpacity="0.4" />
-                        <stop offset="100%" stopColor={color} stopOpacity="0" />
-                    </linearGradient>
-                </defs>
-                <path d={`M 0,${height} L ${pathData} L ${width},${height} Z`} fill="url(#gradSpark)" />
-                <path d={`M ${pathData}`} fill="none" stroke={color} strokeWidth="2" vectorEffect="non-scaling-stroke" />
-            </svg>
-        );
-    };
+    const { riskMetrics, locationName, alerts } = data;
+    const globalRisk = alerts.length > 2 ? 'Alto' : alerts.length > 0 ? 'Medio' : 'Bajo';
+    const riskColor = globalRisk === 'Alto' ? 'critical' : globalRisk === 'Medio' ? 'warning' : 'success';
 
     return (
         <div className="risk-dashboard">
-            {/* TOP ROW: Vital Telemetry (KRI) */}
-            <div className="kri-grid">
-                {/* 1. GRID HEALTH */}
-                <div className="kri-card">
-                    <div className="kri-header">
-                        <span className="icon">⚡</span>
-                        <span className="lbl">Estabilidad de Red</span>
+            {/* LEFT: INCIDENTS & METRICS */}
+            <div className="left-panel">
+                {/* 1. Global Status */}
+                <div className={`status-card ${riskColor}`}>
+                    <div className="icon-box">
+                        <span className="icon">🛡️</span>
                     </div>
-                    <div className="kri-body">
-                        <div className="main-stat">
-                            <span className="val">{riskMetrics.grid.frequency.toFixed(3)}</span>
-                            <span className="unit">Hz</span>
-                        </div>
-                        <div className="spark-container">
-                            <Sparkline points={history.hz} color={Math.abs(riskMetrics.grid.frequency - 60) > 0.05 ? '#fbbf24' : '#34d399'} />
-                        </div>
-                    </div>
-                    <div className="kri-footer">
-                        <span>{riskMetrics.grid.voltage.toFixed(1)} V</span>
-                        <span className={`status ${riskMetrics.grid.stability}`}>{riskMetrics.grid.stability.toUpperCase()}</span>
+                    <div className="info">
+                        <h3>Nivel de Riesgo Global</h3>
+                        <div className="val">{globalRisk.toUpperCase()}</div>
+                        <small>{alerts.length} Alertas Activas</small>
                     </div>
                 </div>
 
-                {/* 2. WATER AUTONOMY */}
-                <div className="kri-card">
-                    <div className="kri-header">
+                {/* 2. Water Stress (Requested Feature) */}
+                <div className="water-card glass-panel">
+                    <div className="card-header">
                         <span className="icon">💧</span>
-                        <span className="lbl">Suministro Hídrico</span>
+                        <span>Estrés Hídrico & Reservas</span>
                     </div>
-                    <div className="kri-body centered">
-                        <div className="circle-gauge">
-                            <svg viewBox="0 0 36 36">
-                                <path className="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                                <path className="circle-fill" strokeDasharray={`${riskMetrics.water.reservoirLevel}, 100`} d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                            </svg>
-                            <div className="gauge-val">
-                                <span>{Math.round(riskMetrics.water.reservoirLevel)}%</span>
-                            </div>
+                    <div className="water-vis">
+                        <div className="reservoir-container">
+                            <div className="water-level" style={{ height: `${riskMetrics.water.reservoirLevel}%` }}></div>
+                            <div className="level-text">{Math.round(riskMetrics.water.reservoirLevel)}%</div>
                         </div>
-                    </div>
-                    <div className="kri-footer">
-                        <span>Reservas: {riskMetrics.water.daysOfAutonomy.toFixed(1)} días</span>
-                    </div>
-                </div>
-
-                {/* 3. SEISMIC */}
-                <div className="kri-card">
-                    <div className="kri-header">
-                        <span className="icon">🌋</span>
-                        <span className="lbl">Sensores Sísmicos</span>
-                    </div>
-                    <div className="kri-body">
-                        <div className="seismic-readout">
-                            <label>Vibración Local (g)</label>
-                            <div className="bar-g">
-                                <div className="fill" style={{ width: `${(riskMetrics.seismic.localVibration * 10000)}%` }}></div>
+                        <div className="water-stats">
+                            <div className="stat">
+                                <span className="lbl">Autonomía</span>
+                                <span className="num">{riskMetrics.water.daysOfAutonomy.toFixed(1)} días</span>
                             </div>
-                            <span className="g-val">{riskMetrics.seismic.localVibration.toFixed(4)} g</span>
-                        </div>
-                        <div className="last-event">
-                            <small>Último Evento:</small>
-                            <strong>Mag {riskMetrics.seismic.lastEvent.mag}</strong>
+                            <div className="stat">
+                                <span className="lbl">Flujo</span>
+                                <span className="num">{riskMetrics.water.flowRate} L/s</span>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                {/* 4. FUEL / OPS */}
-                <div className="kri-card">
-                    <div className="kri-header">
-                        <span className="icon">⛽</span>
-                        <span className="lbl">Autonomía Diesel</span>
-                    </div>
-                    <div className="kri-body centered">
-                        <div className="fuel-tank">
-                            <div className="fuel-level" style={{ height: `${riskMetrics.fuel.dieselLevel}%` }}></div>
-                            <span className="fuel-text">{riskMetrics.fuel.dieselLevel}%</span>
-                        </div>
-                    </div>
-                    <div className="kri-footer">
-                        <span>{riskMetrics.fuel.runtimeHours} hrs operación continua</span>
+                {/* 3. Real-Time Incidents */}
+                <div className="incidents-panel glass-panel">
+                    <h3>Bitácora de Incidentes (Tiempo Real)</h3>
+                    <div className="incident-list">
+                        {alerts.length === 0 ? (
+                            <div className="empty-state">Sin incidentes activos. Operación normal.</div>
+                        ) : (
+                            alerts.map(alert => (
+                                <div key={alert.id} className={`incident-row ${alert.level}`}>
+                                    <div className="inc-time">{new Date(alert.id).toLocaleTimeString()}</div>
+                                    <div className="inc-info">
+                                        <strong>{alert.title}</strong>
+                                        <p>{alert.desc}</p>
+                                    </div>
+                                    <div className="inc-level">{alert.level}</div>
+                                </div>
+                            ))
+                        )}
                     </div>
                 </div>
             </div>
 
-            {/* MIDDLE ROW: GEOSPATIAL + ACTIONS */}
-            <div className="geo-row">
-                <div className="map-container glass-panel">
-                    <h3>Amenazas Regionales</h3>
-                    <div className="map-wrapper">
-                        {/* Reusing existing Globe component for visualization */}
-                        <EarthGlobe />
-                    </div>
-                    <div className="map-overlay">
-                        <div className="region-badge">
-                            <strong>{locationName}</strong>
-                            <span className="risk-score">Nivel Riesgo: MEDIO</span>
-                        </div>
+            {/* RIGHT: THERMAL VISUALIZATION */}
+            <div className="right-panel glass-panel">
+                <div className="visual-header">
+                    <h3>Monitoreo Térmico de Racks</h3>
+                    <div className="geo-context">
+                        <span className="loc-badge">{locationName}</span>
                     </div>
                 </div>
 
-                <div className="controls-container glass-panel">
-                    <h3>Protocolos de Emergencia</h3>
-
-                    <div className="control-group">
-                        <div className="switch-row">
-                            <div className="switch-info">
-                                <h4>Modo Isla (Grid Decoupling)</h4>
-                                <p>Desconectar de CFE y activar gen. locales.</p>
+                <div className="heatmap-grid">
+                    {rackTemps.map((temp, i) => {
+                        const isHot = temp > 28; // Treshold for "Hot"
+                        const isCrit = temp > 35;
+                        const statusClass = isCrit ? 'crit' : isHot ? 'warn' : 'ok';
+                        return (
+                            <div key={i} className={`rack-unit ${statusClass}`}>
+                                <div className="rack-id">R-{100 + i}</div>
+                                <div className="rack-temp">{temp.toFixed(1)}°C</div>
+                                <div className="heat-bar">
+                                    <div className="bar-fill" style={{ height: `${Math.min(100, (temp / 40) * 100)}%` }}></div>
+                                </div>
                             </div>
-                            <label className="toggle-switch">
-                                <input type="checkbox" />
-                                <span className="slider"></span>
-                            </label>
-                        </div>
+                        );
+                    })}
+                </div>
 
-                        <div className="switch-row">
-                            <div className="switch-info">
-                                <h4>Bypass Agua de Emergencia</h4>
-                                <p>Habilitar toma secundaria de pozo.</p>
-                            </div>
-                            <label className="toggle-switch">
-                                <input type="checkbox" />
-                                <span className="slider"></span>
-                            </label>
-                        </div>
-                    </div>
-
-                    <div className="drill-btn-container">
-                        <button className="drill-btn">INICIAR SIMULACRO DE SISMO</button>
+                <div className="globe-mini">
+                    <h4>Contexto Regional</h4>
+                    <div className="globe-wrapper">
+                        {/* Reusing Globe: Small version */}
+                        <EarthGlobe />
                     </div>
                 </div>
             </div>
@@ -193,111 +132,10 @@ export default function RiskDashboard() {
             <style>{`
                 .risk-dashboard {
                     display: grid;
-                    grid-template-rows: auto 1fr;
+                    grid-template-columns: 1fr 1.2fr;
                     gap: 1.5rem;
                     height: 100%;
-                    overflow-y: auto;
                     padding-right: 5px;
-                }
-
-                /* KRI GRID */
-                .kri-grid {
-                    display: grid;
-                    grid-template-columns: repeat(4, 1fr);
-                    gap: 1rem;
-                }
-
-                .kri-card {
-                    background: rgba(255,255,255,0.03);
-                    border: 1px solid rgba(255,255,255,0.08);
-                    border-radius: 16px;
-                    padding: 1rem;
-                    display: flex;
-                    flex-direction: column;
-                    justify-content: space-between;
-                    height: 160px;
-                }
-
-                .kri-header {
-                    display: flex;
-                    align-items: center;
-                    gap: 0.5rem;
-                    color: var(--text-muted);
-                    font-size: 0.85rem;
-                    text-transform: uppercase;
-                    letter-spacing: 0.5px;
-                }
-
-                .kri-body {
-                    flex: 1;
-                    display: flex;
-                    flex-direction: column;
-                    justify-content: center;
-                }
-                .kri-body.centered { align-items: center; }
-
-                .main-stat {
-                    display: flex;
-                    align-items: baseline;
-                    gap: 4px;
-                }
-                .main-stat .val { font-size: 2rem; font-weight: 700; color: #fff; }
-                .main-stat .unit { color: var(--text-muted); }
-
-                /* Sparkline */
-                .spark-container {
-                    width: 100%;
-                    height: 40px;
-                    margin-top: 0.5rem;
-                }
-
-                /* Circular Gauge */
-                .circle-gauge {
-                    width: 80px;
-                    height: 80px;
-                    position: relative;
-                }
-                .circle-bg { fill: none; stroke: rgba(255,255,255,0.1); stroke-width: 3; }
-                .circle-fill { fill: none; stroke: var(--acc-primary); stroke-width: 3; stroke-linecap: round; transition: stroke-dasharray 0.5s ease; stroke-dasharray: 0, 100; }
-                .gauge-val {
-                    position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-                    display: flex; justify-content: center; align-items: center;
-                    font-weight: 700; font-size: 1.2rem; color: #fff;
-                }
-
-                /* Seismic */
-                .bar-g {
-                    width: 100%; height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; margin: 5px 0; overflow: hidden;
-                }
-                .bar-g .fill { height: 100%; background: var(--acc-warning); transition: width 0.1s; }
-                .last-event { margin-top: 0.5rem; font-size: 0.8rem; color: var(--text-muted); display: flex; justify-content: space-between; }
-
-                /* Fuel Tank */
-                .fuel-tank {
-                    width: 40px; height: 60px; border: 2px solid rgba(255,255,255,0.2); border-radius: 4px; position: relative; display: flex; align-items: flex-end; justify-content: center; overflow: hidden;
-                }
-                .fuel-level { width: 100%; background: var(--acc-secondary); transition: height 0.5s; opacity: 0.8; }
-                .fuel-text { position: absolute; bottom: 4px; font-size: 0.8rem; font-weight: 700; text-shadow: 0 1px 2px black; z-index: 2; }
-
-
-                .kri-footer {
-                    font-size: 0.8rem;
-                    color: var(--text-muted);
-                    display: flex;
-                    justify-content: space-between;
-                    border-top: 1px solid rgba(255,255,255,0.05);
-                    padding-top: 0.5rem;
-                    margin-top: 0.5rem;
-                }
-                .status.stable { color: var(--acc-success); }
-
-
-                /* MIDDLE ROW */
-                .geo-row {
-                    display: grid;
-                    grid-template-columns: 2fr 1fr;
-                    gap: 1.5rem;
-                    min-height: 0; /* Important for grid nesting */
                 }
 
                 .glass-panel {
@@ -310,51 +148,89 @@ export default function RiskDashboard() {
                     flex-direction: column;
                 }
 
-                .map-container h3, .controls-container h3 {
-                    margin: 0 0 1rem 0;
-                    font-size: 1rem;
-                    color: rgba(255,255,255,0.8);
-                }
+                /* LEFT PANEL */
+                .left-panel { display: flex; flex-direction: column; gap: 1.5rem; }
 
-                .map-wrapper { flex: 1; border-radius: 12px; overflow: hidden; background: rgba(0,0,0,0.2); position: relative; }
-                .map-overlay { position: absolute; bottom: 1rem; left: 1rem; pointer-events: none; }
-                .region-badge {
-                    background: rgba(20,25,40,0.85); backdrop-filter: blur(8px);
-                    padding: 0.5rem 1rem; border-radius: 8px; border: 1px solid var(--glass-border);
-                    color: #fff; display: flex; flex-direction: column;
+                .status-card {
+                    padding: 1.5rem; border-radius: 20px;
+                    background: rgba(255,255,255,0.05);
+                    display: flex; align-items: center; gap: 1.5rem;
+                    border: 1px solid rgba(255,255,255,0.1);
                 }
-                .risk-score { font-size: 0.75rem; color: var(--acc-warning); font-weight: 600; margin-top: 2px; }
+                .status-card.critical { background: rgba(239, 68, 68, 0.1); border-color: rgba(239, 68, 68, 0.3); }
+                .status-card.warning { background: rgba(234, 179, 8, 0.1); border-color: rgba(234, 179, 8, 0.3); }
+                .status-card.success { background: rgba(16, 185, 129, 0.1); border-color: rgba(16, 185, 129, 0.3); }
 
-                /* Controls */
-                .control-group { display: flex; flex-direction: column; gap: 1.5rem; margin-bottom: auto; }
-                .switch-row { display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
-                .switch-info h4 { margin: 0; font-size: 0.9rem; color: #fff; }
-                .switch-info p { margin: 2px 0 0 0; font-size: 0.75rem; color: var(--text-muted); }
+                .icon-box { font-size: 2rem; }
+                .info h3 { margin: 0; font-size: 0.9rem; opacity: 0.8; }
+                .info .val { font-size: 1.8rem; font-weight: 700; color: #fff; }
 
-                /* Toggle Switch */
-                .toggle-switch { position: relative; width: 44px; height: 24px; }
-                .toggle-switch input { opacity: 0; width: 0; height: 0; }
-                .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #334155; transition: .4s; border-radius: 24px; }
-                .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
-                input:checked + .slider { background-color: var(--acc-danger); }
-                input:checked + .slider:before { transform: translateX(20px); }
-
-                .drill-btn {
-                    width: 100%;
-                    background: rgba(239, 68, 68, 0.15);
-                    border: 1px solid rgba(239, 68, 68, 0.5);
-                    color: #f87171;
-                    padding: 1rem;
-                    font-weight: 700;
-                    border-radius: 8px;
-                    cursor: pointer;
-                    transition: all 0.2s;
-                    margin-top: 2rem;
+                /* WATER CARD */
+                .water-card .card-header { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem; color: var(--text-muted); }
+                .water-vis { display: flex; gap: 2rem; align-items: center; }
+                
+                .reservoir-container {
+                     width: 60px; height: 100px; border: 2px solid rgba(255,255,255,0.2); border-radius: 8px;
+                     position: relative; display: flex; align-items: flex-end; justify-content: center; overflow: hidden;
+                     background: rgba(0,0,0,0.2);
                 }
-                .drill-btn:hover {
-                    background: rgba(239, 68, 68, 0.3);
-                    box-shadow: 0 0 20px rgba(239, 68, 68, 0.2);
+                .water-level { width: 100%; background: #3b82f6; transition: height 0.5s; opacity: 0.8; }
+                .level-text { position: absolute; bottom: 5px; font-weight: 700; font-size: 0.9rem; text-shadow: 0 1px 2px black; z-index: 2; color: #fff; }
+
+                .water-stats { display: flex; flex-direction: column; gap: 1rem; }
+                .stat { display: flex; flex-direction: column; }
+                .stat .lbl { font-size: 0.8rem; color: var(--text-muted); }
+                .stat .num { font-size: 1.2rem; font-weight: 600; color: #fff; }
+
+                /* INCIDENTS */
+                .incidents-panel { flex: 1; min-height: 200px; }
+                .incidents-panel h3 { margin: 0 0 1rem 0; font-size: 1rem; }
+                .incident-list { display: flex; flex-direction: column; gap: 0.5rem; overflow-y: auto; flex: 1; }
+                
+                .incident-row {
+                    background: rgba(255,255,255,0.03); padding: 0.8rem; border-radius: 8px;
+                    display: grid; grid-template-columns: auto 1fr auto; gap: 1rem; align-items: center;
+                    border-left: 3px solid transparent;
                 }
+                .incident-row.warning { border-left-color: var(--acc-warning); }
+                .incident-row.critical { border-left-color: var(--acc-danger); }
+                
+                .inc-time { font-size: 0.75rem; color: var(--text-muted); }
+                .inc-info strong { display: block; font-size: 0.9rem; color: #eee; }
+                .inc-info p { margin: 2px 0 0 0; font-size: 0.8rem; color: var(--text-muted); }
+                .inc-level { font-size: 0.7rem; text-transform: uppercase; padding: 2px 6px; border-radius: 4px; background: rgba(255,255,255,0.1); }
+                .empty-state { text-align: center; color: var(--text-muted); padding: 2rem; }
+
+                /* RIGHT PANEL */
+                .visual-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+                .visual-header h3 { margin: 0; font-size: 1rem; }
+                .loc-badge { background: rgba(255,255,255,0.1); padding: 4px 8px; border-radius: 6px; font-size: 0.8rem; }
+
+                .heatmap-grid {
+                    display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;
+                    margin-bottom: 2rem;
+                }
+                .rack-unit {
+                    background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px;
+                    padding: 10px; height: 120px; position: relative; display: flex; flex-direction: column; justify-content: space-between;
+                    transition: all 0.5s;
+                }
+                .rack-unit.warn { background: rgba(249, 115, 22, 0.15); border-color: rgba(249, 115, 22, 0.4); }
+                .rack-unit.crit { background: rgba(239, 68, 68, 0.2); border-color: rgba(239, 68, 68, 0.5); animation: pulse 2s infinite; }
+
+                .rack-id { font-size: 0.75rem; color: var(--text-muted); }
+                .rack-temp { font-size: 1.2rem; font-weight: 700; text-align: center; margin: 5px 0; }
+                
+                .heat-bar { height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; overflow: hidden; }
+                .bar-fill { background: var(--acc-primary); transition: height 0.3s; width: 100%; } 
+                .rack-unit.warn .bar-fill { background: var(--acc-warning); }
+                .rack-unit.crit .bar-fill { background: var(--acc-danger); }
+
+                @keyframes pulse { 0% { box-shadow: 0 0 5px rgba(239,68,68,0.2); } 50% { box-shadow: 0 0 20px rgba(239,68,68,0.5); } 100% { box-shadow: 0 0 5px rgba(239,68,68,0.2); } }
+
+                .globe-mini { flex: 1; display: flex; flex-direction: column; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 1rem; }
+                .globe-mini h4 { margin: 0 0 0.5rem 0; font-size: 0.9rem; color: var(--text-muted); }
+                .globe-wrapper { flex: 1; position: relative; border-radius: 12px; overflow: hidden; background: rgba(0,0,0,0.2); min-height: 200px; }
 
             `}</style>
         </div>
