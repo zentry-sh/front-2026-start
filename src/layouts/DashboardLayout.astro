@@ -19,8 +19,7 @@
         <div class="app-container">
             <aside class="sidebar">
                 <div class="logo-area">
-                    <img src="/images/andy_logo.png" alt="ANDY Logo" class="logo-img" />
-                    <!-- <span class="logo-text">ANDY - Operative</span> --> 
+                    <img src="/images/andy_logo_blue.png" alt="ANDY Logo" class="logo-img" />
                 </div>
                 <nav>
                     <a href="/dashboard" class={`nav-item ${Astro.url.pathname === '/dashboard' ? 'active' : ''}`}>
@@ -251,9 +250,11 @@
     }
 
     .logo-img {
-        height: 60px; /* Adjusted for sidebar */
-        width: auto;
-        filter: drop-shadow(0 0 10px rgba(52, 211, 153, 0.3)); /* Greenish glow matching logo */
+        width: 100%; /* Fill the container width */
+        max-width: 200px; /* Cap it */
+        height: auto;
+        /* filter: drop-shadow(0 0 10px rgba(52, 211, 153, 0.3)); Removed green glow for blue logo */ 
+        display: block;
     }
 
     /* .logo-icon { ... removed ... } */
