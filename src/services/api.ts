@@ -128,6 +128,7 @@ export class MockApiService {
 
   constructor() {
     this.weatherService = WeatherService.getInstance();
+    this.loadState();
   }
 
   // Iniciar simulación de datos (Polling + Real Weather Fetch)
@@ -182,7 +183,32 @@ export class MockApiService {
   }
 
   private notifySubscribers() {
+    this.saveState();
     this.subscribers.forEach(cb => cb(this.currentState));
+  }
+
+  private saveState() {
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('hydroops_state', JSON.stringify(this.currentState));
+      } catch (e) {
+        // Ignore quota limits
+      }
+    }
+  }
+
+  private loadState() {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('hydroops_state');
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          this.currentState = { ...this.currentState, ...parsed };
+        } catch (e) {
+          console.error("Failed to load state", e);
+        }
+      }
+    }
   }
 
   private async updateFromRealWeather() {
