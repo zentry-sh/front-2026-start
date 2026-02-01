@@ -7,7 +7,7 @@ export default function AlertFeed() {
   useEffect(() => {
     mockApi.startSimulation();
     const unsubscribe = mockApi.subscribe((newData) => {
-      setAlerts(newData.alerts);
+      setAlerts([...newData.alerts]);
     });
     return () => unsubscribe();
   }, []);

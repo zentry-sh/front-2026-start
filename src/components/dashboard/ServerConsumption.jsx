@@ -58,7 +58,7 @@ export default function ServerConsumption() {
   useEffect(() => {
     mockApi.startSimulation();
     const unsubscribe = mockApi.subscribe((newData) => {
-      setData(newData.serverMetrics);
+      setData({ ...newData.serverMetrics });
     });
     return () => {
       unsubscribe();

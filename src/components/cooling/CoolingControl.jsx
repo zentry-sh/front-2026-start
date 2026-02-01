@@ -8,8 +8,15 @@ export default function CoolingControl() {
     useEffect(() => {
         mockApi.startSimulation();
         const unsubscribe = mockApi.subscribe((newData) => {
-            setData(newData.coolingSystem);
-            setRealSystem(newData.realSystem);
+            // Force new object references to trigger React re-render
+            setData({ ...newData.coolingSystem });
+            setRealSystem({
+                ...newData.realSystem,
+                // Deep clone arrays to ensure child lists re-render
+                chillers: [...newData.realSystem.chillers],
+                condenserPumps: [...newData.realSystem.condenserPumps],
+                chilledPumps: [...newData.realSystem.chilledPumps]
+            });
         });
         return () => unsubscribe();
     }, []);

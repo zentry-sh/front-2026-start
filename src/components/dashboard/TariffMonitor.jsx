@@ -7,7 +7,7 @@ export default function TariffMonitor() {
   useEffect(() => {
     mockApi.startSimulation();
     const unsubscribe = mockApi.subscribe((newData) => {
-      setData(newData.tariff);
+      setData({ ...newData.tariff });
     });
     return () => unsubscribe();
   }, []);
