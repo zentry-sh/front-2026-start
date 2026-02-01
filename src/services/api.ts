@@ -65,6 +65,8 @@ export interface DashboardData {
   tariff: TariffData;
   coolingSystem: CoolingSystemState;
   realSystem: RealSystemData;
+  locationName: string;
+  forecast: { day: string; temp: number; icon: string }[];
 }
 
 export class MockApiService {
@@ -112,7 +114,16 @@ export class MockApiService {
         valves: [i < 3]
       })),
       totalPower: 0
-    }
+    },
+    locationName: 'CDMX - Centro',
+    forecast: []
+  };
+
+  // Location State
+  private currentLocation = {
+    name: 'CDMX - Centro',
+    lat: 19.4326,
+    lon: -99.1332
   };
 
   constructor() {
@@ -126,6 +137,9 @@ export class MockApiService {
     // Fetch initial weather data
     this.updateFromRealWeather();
 
+    // We schedule weather updates, but careful not to duplicate if called multiple times
+    // (In this mock structure, assuming singleton usage mostly)
+
     this.intervalId = window.setInterval(() => {
       this.updateState();
       this.notifySubscribers();
@@ -137,6 +151,13 @@ export class MockApiService {
       clearInterval(this.intervalId);
       this.intervalId = null;
     }
+  }
+
+  public async setLocation(name: string, lat: number, lon: number) {
+    this.currentLocation = { name, lat, lon };
+    // Trigger update immediately
+    await this.updateFromRealWeather();
+    this.notifySubscribers();
   }
 
   public subscribe(callback: (data: DashboardData) => void): () => void {
@@ -165,7 +186,7 @@ export class MockApiService {
   }
 
   private async updateFromRealWeather() {
-    const forecast = await this.weatherService.fetchForecast();
+    const forecast = await this.weatherService.fetchForecast(this.currentLocation.lat, this.currentLocation.lon);
     if (forecast && forecast.list.length > 0) {
       const current = forecast.list[0];
       const triggers = this.weatherService.evaluateTriggers(forecast.list);
@@ -180,6 +201,19 @@ export class MockApiService {
 
       // Map triggers to recommendations and alerts
       this.mapTriggersToState(triggers);
+
+      // Populate Forecast for UI
+      const daily = this.weatherService.projectDaily(forecast.list);
+      const days = Object.keys(daily).sort().slice(0, 3).map(date => {
+        const temps = daily[date];
+        const avg = temps.reduce((a, b) => a + b, 0) / temps.length;
+        return {
+          day: new Date(date).toLocaleDateString('es-ES', { weekday: 'short' }).toUpperCase(),
+          temp: Math.round(avg),
+          icon: avg > 25 ? '☀️' : avg > 18 ? '⛅' : '🌧️'
+        };
+      });
+      this.currentState.forecast = days;
     }
   }
 

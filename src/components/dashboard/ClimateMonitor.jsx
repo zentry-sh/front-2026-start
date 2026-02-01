@@ -3,39 +3,32 @@ import React, { useEffect, useState } from 'react';
 import { mockApi } from '../../services/api';
 import { WeatherService } from '../../services/WeatherService';
 
+const LOCATIONS = [
+  { id: "cdmx", name: "CDMX - Centro", lat: 19.4326, lon: -99.1332 },
+  { id: "mty", name: "Monterrey, NL", lat: 25.6866, lon: -100.3161 },
+  { id: "oax", name: "Oaxaca, Oax", lat: 17.0732, lon: -96.7266 },
+];
+
 export default function ClimateMonitor() {
   const [data, setData] = useState(null);
-  const [forecastDays, setForecastDays] = useState([]);
+  const [selectedLoc, setSelectedLoc] = useState("cdmx");
 
   useEffect(() => {
     mockApi.startSimulation();
     const unsubscribe = mockApi.subscribe((newData) => {
-      setData(newData.climate);
+      setData(newData.climate ? { ...newData.climate, locationName: newData.locationName, forecast: newData.forecast } : null);
     });
-
-    // Load real forecast for valid mini-forecast days
-    const loadForecast = async () => {
-      const service = WeatherService.getInstance();
-      const forecast = await service.fetchForecast();
-      if (forecast) {
-        const daily = service.projectDaily(forecast.list);
-        // Get next 3 days
-        const days = Object.keys(daily).sort().slice(0, 3).map(date => {
-          const temps = daily[date];
-          const avg = temps.reduce((a, b) => a + b, 0) / temps.length;
-          return {
-            day: new Date(date).toLocaleDateString('es-ES', { weekday: 'short' }).toUpperCase(),
-            temp: Math.round(avg),
-            icon: avg > 25 ? '☀️' : avg > 18 ? '⛅' : '🌧️'
-          };
-        });
-        setForecastDays(days);
-      }
-    };
-    loadForecast();
-
     return () => unsubscribe();
   }, []);
+
+  const handleLocationChange = (e) => {
+    const locId = e.target.value;
+    setSelectedLoc(locId);
+    const loc = LOCATIONS.find(l => l.id === locId);
+    if (loc) {
+      mockApi.setLocation(loc.name, loc.lat, loc.lon);
+    }
+  };
 
   if (!data) return <div className="loading">...</div>;
 
@@ -43,10 +36,16 @@ export default function ClimateMonitor() {
     <div className="climate-panel">
       <div className="header">
         <h3>Predicción Climática</h3>
-        <span className="location">
-          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
-          Zona Norte
-        </span>
+
+        <select
+          className="location-select"
+          value={selectedLoc}
+          onChange={handleLocationChange}
+        >
+          {LOCATIONS.map(l => (
+            <option key={l.id} value={l.id}>{l.name}</option>
+          ))}
+        </select>
       </div>
 
       <div className="main-metric">
@@ -84,25 +83,14 @@ export default function ClimateMonitor() {
       </div>
 
       <div className="forecast-mini">
-        {forecastDays.length > 0 ? forecastDays.map((day, idx) => (
+        {data.forecast && data.forecast.length > 0 ? data.forecast.map((day, idx) => (
           <div key={idx} className="day">
             <span>{day.day.replace('.', '')}</span>
             <div className="day-icon">{day.icon}</div>
             <span>{day.temp}°</span>
           </div>
         )) : (
-          <>
-            <div className="day">
-              <span>HOY</span>
-              <div className="day-icon sun">☀️</div>
-              <span>--</span>
-            </div>
-            <div className="day">
-              <span>MAÑ</span>
-              <div className="day-icon cloud">⛅</div>
-              <span>--</span>
-            </div>
-          </>
+          <div className="day"><span>Cargando...</span></div>
         )}
       </div>
 
@@ -154,17 +142,19 @@ export default function ClimateMonitor() {
           text-shadow: 0 2px 4px rgba(0,0,0,0.2);
         }
 
-        .location {
-          font-size: 0.75rem;
-          color: var(--text-main);
-          background: rgba(255,255,255,0.1);
-          padding: 4px 10px;
-          border-radius: 12px;
-          display: flex;
-          align-items: center;
-          gap: 4px;
-          font-weight: 500;
-          border: 1px solid rgba(255,255,255,0.1);
+        .location-select {
+            background: rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: #fff;
+            padding: 4px 8px;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            outline: none;
+            cursor: pointer;
+        }
+        .location-select option {
+            background: #1a1a2e;
+            color: #fff;
         }
 
         .main-metric {

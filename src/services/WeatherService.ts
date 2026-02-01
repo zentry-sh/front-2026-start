@@ -43,15 +43,18 @@ export class WeatherService {
     }
 
     // 1. Fetch Forecast from OpenWeather
-    async fetchForecast(): Promise<ForecastResponse | null> {
-        // Simple cache (10 minutes)
-        if (this.forecastCache && (Date.now() - this.lastFetch < 600000)) {
-            return this.forecastCache;
-        }
+    async fetchForecast(lat: number = LAT, lon: number = LON): Promise<ForecastResponse | null> {
+        // Simple cache key based on location (very basic)
+        const cacheKey = `${lat},${lon}`;
+        // Note: For a robust app, use a Map<string, ForecastResponse> for cache. 
+        // For now, we just invalidate if location changes or time expires.
+
+        // This simple cache check logic needs to be a bit smarter if we switch locations often
+        // But for this demo, we'll just fetch fresh if called.
 
         try {
             const response = await fetch(
-                `https://api.openweathermap.org/data/2.5/forecast?lat=${LAT}&lon=${LON}&units=metric&appid=${API_KEY}`
+                `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&units=metric&appid=${API_KEY}`
             );
             if (!response.ok) throw new Error("Weather API fetch failed");
 
