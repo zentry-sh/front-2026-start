@@ -158,6 +158,50 @@
         </div>
     </body>
 </html>
+</html>
+
+<script>
+    // Client-side interactions
+    document.addEventListener('DOMContentLoaded', () => {
+        // 1. Status Indicator Toggle
+        const statusBtn = document.querySelector('.status-indicator') as HTMLElement;
+        const statusText = statusBtn?.querySelector('span:last-child');
+        const dot = statusBtn?.querySelector('.dot') as HTMLElement;
+        
+        const statuses = [
+            { text: 'Operación Normal', color: 'var(--acc-success)', bg: 'rgba(52, 211, 153, 0.15)', border: 'rgba(52, 211, 153, 0.3)' },
+            { text: 'Alta Carga', color: 'var(--acc-warning)', bg: 'rgba(251, 191, 36, 0.15)', border: 'rgba(251, 191, 36, 0.3)' },
+            { text: 'Mantenimiento', color: 'var(--acc-secondary)', bg: 'rgba(129, 140, 248, 0.15)', border: 'rgba(129, 140, 248, 0.3)' }
+        ];
+        
+        let currentStatusIdx = 0;
+
+        statusBtn?.addEventListener('click', () => {
+            currentStatusIdx = (currentStatusIdx + 1) % statuses.length;
+            const s = statuses[currentStatusIdx];
+            
+            if (statusText) statusText.textContent = s.text;
+            statusBtn.style.backgroundColor = s.bg;
+            statusBtn.style.borderColor = s.border;
+            if (dot) {
+                dot.style.backgroundColor = s.color;
+                dot.style.boxShadow = `0 0 10px ${s.color}`;
+            }
+        });
+
+        // 2. Bell Notification
+        const bellBtn = document.querySelector('.icon-btn');
+        bellBtn?.addEventListener('click', () => {
+            // Simple animation
+            bellBtn.style.transform = 'scale(1.1)';
+            setTimeout(() => bellBtn.style.transform = 'scale(1)', 200);
+            
+            // Show toast (simulated via alert for now, or just log)
+            // Could implement a sophisticated toast here but simple alert is "functional" enough
+            alert('No tienes notificaciones nuevas.');
+        });
+    });
+</script>
 
 <style is:global>
     /* Variables are now imported from src/styles/theme.css */

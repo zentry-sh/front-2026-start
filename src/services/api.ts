@@ -93,6 +93,19 @@ export class MockApiService {
     };
   }
 
+  public applyRecommendation(id: string) {
+    const rec = this.currentState.recommendations.find(r => r.id === id);
+    if (rec) {
+      rec.applied = true;
+      this.notifySubscribers();
+    }
+  }
+
+  public dismissAlert(id: number) {
+    this.currentState.alerts = this.currentState.alerts.filter(a => a.id !== id);
+    this.notifySubscribers();
+  }
+
   private notifySubscribers() {
     this.subscribers.forEach(cb => cb(this.currentState));
   }

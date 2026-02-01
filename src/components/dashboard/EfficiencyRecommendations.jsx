@@ -13,9 +13,7 @@ export default function EfficiencyRecommendations() {
   }, []);
 
   const handleApply = (id) => {
-    setRecs(prev => prev.map(rec =>
-      rec.id === id ? { ...rec, applied: true } : rec
-    ));
+    mockApi.applyRecommendation(id);
   };
 
   return (
